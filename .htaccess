@@ -1,0 +1,8 @@
+# K-NEXUS .htaccess — Security
+<FilesMatch "(admin_backend\.php|login_attempts\.json|admin_log\.txt|\.env)">
+  Order Allow,Deny
+  Deny from all
+</FilesMatch>
+RewriteEngine On
+RewriteCond %{REQUEST_METHOD} !POST
+RewriteRule ^admin_backend\.php$ - [F,L]

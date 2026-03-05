@@ -1,0 +1,133 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+a{color:inherit;text-decoration:none}
+body{font-family:Nunito,sans-serif;color:#f0f0ff;min-height:100vh}
+body *{animation-play-state:var(--anim-play,running)}
+.cb-mode{filter:saturate(0) contrast(1.3) brightness(1.1)}
+.page-content{position:relative;z-index:10;padding-top:76px;max-width:1100px;margin:0 auto;padding-bottom:60px;padding-left:22px;padding-right:22px}
+.room-card-inner{background:rgba(255,255,255,.05);border:1px solid var(--ac,#8b5cf6);border-radius:20px;padding:30px;margin-bottom:24px;backdrop-filter:blur(8px)}
+.room-title{font-family:Orbitron,sans-serif;font-size:1.6rem;font-weight:900;margin-bottom:6px}
+.room-area{font-size:.82rem;text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:14px;color:var(--ac,#8b5cf6)}
+.room-desc{font-size:.96rem;line-height:1.8;color:#b0b0d0;margin-bottom:22px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:22px}
+.stat{background:rgba(255,255,255,.04);border:1px solid var(--ac,#8b5cf6);border-left:3px solid var(--ac,#8b5cf6);border-radius:10px;padding:13px}
+.stat-lbl{font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:#6666a0;margin-bottom:4px}
+.stat-val{font-size:.88rem;font-weight:800;color:#fff}
+.note-box{background:rgba(255,255,255,.04);border:1px solid var(--ac,#8b5cf6);border-radius:12px;padding:16px;font-size:.87rem;color:#a0a0cc;line-height:1.6;margin-bottom:22px}
+.note-box strong{color:var(--ac,#8b5cf6)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+.btn-p{background:linear-gradient(135deg,var(--ac,#8b5cf6),rgba(0,0,0,.2));border:none;border-radius:10px;padding:13px 24px;color:#fff;font-family:Nunito,sans-serif;font-weight:900;font-size:.95rem;cursor:pointer;text-decoration:none;display:inline-block}
+.btn-s{background:rgba(255,255,255,.05);border:1px solid var(--ac,#8b5cf6);border-radius:10px;padding:13px 18px;color:var(--ac,#8b5cf6);font-family:Nunito,sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;text-decoration:none;display:inline-block}
+.room-nav{display:flex;justify-content:space-between;margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08)}
+.rnav{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;color:#a78bfa;text-decoration:none;max-width:48%;font-size:.82rem}
+.rnav small{display:block;color:#5555a0;font-size:.68rem;margin-bottom:2px;text-transform:uppercase;letter-spacing:1px}
+.room-icon{font-size:5rem;margin-bottom:16px;display:block;filter:drop-shadow(0 0 20px var(--ac,#8b5cf6));animation:icon-glow 3s ease-in-out infinite alternate}
+@keyframes icon-glow{0%{filter:drop-shadow(0 0 10px var(--ac,#8b5cf6))}100%{filter:drop-shadow(0 0 30px var(--ac,#8b5cf6))}}
+</style><title>All 27 Spaces — K-NEXUS</title>
+<style>.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:18px}
+.sc{background:rgba(255,255,255,.04);border:1px solid var(--card-ac,#8b5cf6);border-radius:14px;padding:18px;cursor:pointer;transition:all .25s;text-decoration:none;display:block;border-left:4px solid var(--card-ac)}
+.sc:hover{transform:translateY(-3px);background:rgba(255,255,255,.07)}
+.sc-num{font-size:.65rem;color:#6666a0;letter-spacing:2px;margin-bottom:5px;font-family:Orbitron,sans-serif}
+.sc-icon{font-size:2rem;margin-bottom:8px}.sc-name{font-size:.9rem;font-weight:900;margin-bottom:4px;color:#e0e0ff}
+.sc-area{font-size:.7rem;color:#6666a0;text-transform:uppercase;letter-spacing:1px}
+.sec-hd{margin-top:32px;padding:12px 16px;border-radius:8px;font-weight:900;font-size:.85rem;letter-spacing:1px;margin-bottom:4px}
+.page-hd{font-family:Orbitron,sans-serif;font-size:1.4rem;font-weight:900;background:linear-gradient(135deg,#c4b5fd,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px}
+.page-sub{color:#6666a0;font-size:.85rem;margin-bottom:8px}
+</style></head><body style="background:#07071a">
+<nav style="position:fixed;top:0;left:0;right:0;z-index:1000;height:56px;display:flex;align-items:center;padding:0 20px;gap:10px;background:rgba(7,7,26,.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(139,92,246,.2);font-family:Nunito,sans-serif;font-size:.82rem">
+  <a href="index.html" style="font-family:Orbitron,sans-serif;font-size:.85rem;font-weight:900;background:linear-gradient(135deg,#c4b5fd,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-right:8px">K✦NEXUS</a>
+  <a href="index.html" style="color:#a78bfa;font-weight:700">🏠 Home</a>
+  <a href="spaces.html" style="color:#a78bfa;font-weight:700">🗺 Spaces</a>
+  <a href="index.html#membership" style="color:#a78bfa;font-weight:700">💜 Join</a>
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+    <button id="music-btn" onclick="toggleMusic('meadow')" style="background:rgba(139,92,246,.2);border:1px solid #8b5cf6;border-radius:20px;padding:5px 12px;color:#c4b5fd;cursor:pointer;font-size:.75rem;font-family:Nunito,sans-serif;font-weight:700">🎵 Lo-Fi</button>
+    <button id="anim-btn" onclick="toggleAnim()" style="background:rgba(249,115,22,.15);border:1px solid #f97316;border-radius:20px;padding:5px 12px;color:#fb923c;cursor:pointer;font-size:.75rem;font-family:Nunito,sans-serif;font-weight:700">✨ Anim ON</button>
+    <button id="colour-btn" onclick="toggleColour()" style="background:rgba(6,182,212,.12);border:1px solid #06b6d4;border-radius:20px;padding:5px 12px;color:#67e8f9;cursor:pointer;font-size:.75rem;font-family:Nunito,sans-serif;font-weight:700">👁 Colour Blind</button>
+    <button onclick="doLogout()" style="background:rgba(239,68,68,.15);border:1px solid #ef4444;border-radius:20px;padding:5px 12px;color:#fca5a5;cursor:pointer;font-size:.75rem;font-family:Nunito,sans-serif;font-weight:700">🚪 Logout</button>
+  </div>
+</nav>
+<div class="page-content">
+  <div class="page-hd">All 27 Spaces</div>
+  <p class="page-sub">Three worlds. One building. Click any space to explore it.</p>
+<div class="sec-hd" style="background:#22c55e18;border-left:4px solid #22c55e;color:#22c55e">☕ CAFE & SOCIAL — Rooms 1–3</div><div class="sgrid"><a class="sc" href="room-1.html" style="--card-ac:#22c55e"><div class="sc-num">ROOM 01</div><div class="sc-icon">☕</div><div class="sc-name">Main Café & Social Space</div><div class="sc-area">Walk in</div></a><a class="sc" href="room-2.html" style="--card-ac:#f97316"><div class="sc-num">ROOM 02</div><div class="sc-icon">🍳</div><div class="sc-name">Commercial Kitchen</div><div class="sc-area">Book ahead</div></a><a class="sc" href="room-3.html" style="--card-ac:#06b6d4"><div class="sc-num">ROOM 03</div><div class="sc-icon">🌿</div><div class="sc-name">Accessible Dining</div><div class="sc-area">Walk in</div></a></div><div class="sec-hd" style="background:#8b5cf618;border-left:4px solid #8b5cf6;color:#8b5cf6">🕹 EXPERIENCE & LEARNING — Rooms 4–13</div><div class="sgrid"><a class="sc" href="room-4.html" style="--card-ac:#8b5cf6"><div class="sc-num">ROOM 04</div><div class="sc-icon">🕹</div><div class="sc-name">Arcade Hall</div><div class="sc-area">Walk in</div></a><a class="sc" href="room-5.html" style="--card-ac:#ec4899"><div class="sc-num">ROOM 05</div><div class="sc-icon">🥽</div><div class="sc-name">VR Experience Suite</div><div class="sc-area">Book a slot</div></a><a class="sc" href="room-6.html" style="--card-ac:#f97316"><div class="sc-num">ROOM 06</div><div class="sc-icon">🎨</div><div class="sc-name">Creation Lab</div><div class="sc-area">Walk in / Workshop</div></a><a class="sc" href="room-7.html" style="--card-ac:#22c55e"><div class="sc-num">ROOM 07</div><div class="sc-icon">🏟</div><div class="sc-name">Gaming & Events Space</div><div class="sc-area">Events calendar</div></a><a class="sc" href="room-8.html" style="--card-ac:#06b6d4"><div class="sc-num">ROOM 08</div><div class="sc-icon">🔬</div><div class="sc-name">STEM Lab</div><div class="sc-area">Walk in / Book</div></a><a class="sc" href="room-9.html" style="--card-ac:#ec4899"><div class="sc-num">ROOM 09</div><div class="sc-icon">🎵</div><div class="sc-name">Music & Drama Studio</div><div class="sc-area">Book a slot</div></a><a class="sc" href="room-10.html" style="--card-ac:#8b5cf6"><div class="sc-num">ROOM 10</div><div class="sc-icon">🎬</div><div class="sc-name">Animation Studio</div><div class="sc-area">Book a slot</div></a><a class="sc" href="room-11.html" style="--card-ac:#f97316"><div class="sc-num">ROOM 11</div><div class="sc-icon">📡</div><div class="sc-name">Streaming Room</div><div class="sc-area">Book a slot</div></a><a class="sc" href="room-12.html" style="--card-ac:#22c55e"><div class="sc-num">ROOM 12</div><div class="sc-icon">🏆</div><div class="sc-name">E-Sports Suite</div><div class="sc-area">Walk in / Events</div></a><a class="sc" href="room-13.html" style="--card-ac:#06b6d4"><div class="sc-num">ROOM 13</div><div class="sc-icon">🔧</div><div class="sc-name">Creative Workshop</div><div class="sc-area">Walk in / Workshop</div></a></div><div class="sec-hd" style="background:#06b6d418;border-left:4px solid #06b6d4;color:#06b6d4">💚 WELLBEING, CLINICAL & OPERATIONAL — Rooms 14–27</div><div class="sgrid"><a class="sc" href="room-14.html" style="--card-ac:#22c55e"><div class="sc-num">ROOM 14</div><div class="sc-icon">💚</div><div class="sc-name">Welcome & Recovery Hub</div><div class="sc-area">Walk in</div></a><a class="sc" href="room-15.html" style="--card-ac:#8b5cf6"><div class="sc-num">ROOM 15</div><div class="sc-icon">💜</div><div class="sc-name">Talking Space A</div><div class="sc-area">By appointment</div></a><a class="sc" href="room-16.html" style="--card-ac:#06b6d4"><div class="sc-num">ROOM 16</div><div class="sc-icon">💙</div><div class="sc-name">Talking Space B</div><div class="sc-area">By appointment</div></a><a class="sc" href="room-17.html" style="--card-ac:#ec4899"><div class="sc-num">ROOM 17</div><div class="sc-icon">🤝</div><div class="sc-name">Group Support Space</div><div class="sc-area">Session calendar</div></a><a class="sc" href="room-18.html" style="--card-ac:#06b6d4"><div class="sc-num">ROOM 18</div><div class="sc-icon">💧</div><div class="sc-name">Hydrotherapy Suite</div><div class="sc-area">Clinician only</div></a><a class="sc" href="room-19.html" style="--card-ac:#f97316"><div class="sc-num">ROOM 19</div><div class="sc-icon">🌈</div><div class="sc-name">Sensory Space</div><div class="sc-area">Walk in / Book</div></a><a class="sc" href="room-20.html" style="--card-ac:#22c55e"><div class="sc-num">ROOM 20</div><div class="sc-icon">🏥</div><div class="sc-name">Clinical Assessment Room</div><div class="sc-area">By appointment</div></a><a class="sc" href="room-21.html" style="--card-ac:#8b5cf6"><div class="sc-num">ROOM 21</div><div class="sc-icon">🩺</div><div class="sc-name">GP & Specialist Liaison</div><div class="sc-area">By appointment</div></a><a class="sc" href="room-22.html" style="--card-ac:#f97316"><div class="sc-num">ROOM 22</div><div class="sc-icon">🎖</div><div class="sc-name">Veterans Support Suite</div><div class="sc-area">Walk in / Sessions</div></a><a class="sc" href="room-23.html" style="--card-ac:#ec4899"><div class="sc-num">ROOM 23</div><div class="sc-icon">⚡</div><div class="sc-name">Neurodivergent Space</div><div class="sc-area">Walk in</div></a><a class="sc" href="room-24.html" style="--card-ac:#8b5cf6"><div class="sc-num">ROOM 24</div><div class="sc-icon">🧠</div><div class="sc-name">Brain Injury Rehabilitation</div><div class="sc-area">Clinician only</div></a><a class="sc" href="room-25.html" style="--card-ac:#22c55e"><div class="sc-num">ROOM 25</div><div class="sc-icon">📚</div><div class="sc-name">Learning & Digital Hub</div><div class="sc-area">Walk in</div></a><a class="sc" href="room-26.html" style="--card-ac:#6b7280"><div class="sc-num">ROOM 26</div><div class="sc-icon">👥</div><div class="sc-name">Staff & Welfare Suite</div><div class="sc-area">N/A</div></a><a class="sc" href="room-27.html" style="--card-ac:#f97316"><div class="sc-num">ROOM 27</div><div class="sc-icon">🏢</div><div class="sc-name">Director & Admin Hub</div><div class="sc-area">N/A</div></a></div></div><script>
+var _aud=null,_audNodes=[],_audOn=false,_animOn=true;
+function _initAud(){if(_aud)return;try{_aud=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+function _stopAud(){_audNodes.forEach(function(n){try{n.stop();}catch(e){}});_audNodes=[];_audOn=false;}
+function _tone(freq,vol,type,dur){_initAud();if(!_aud)return;var o=_aud.createOscillator(),g=_aud.createGain();o.type=type||'sine';o.frequency.value=freq;g.gain.value=vol||.05;o.connect(g);g.connect(_aud.destination);o.start();if(dur)o.stop(_aud.currentTime+dur);else _audNodes.push(o);return o;}
+function playMeadow(){_stopAud();_audOn=true;_initAud();
+  var notes=[196,220,261,294,330];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sine';o.frequency.value=notes[i%notes.length];g.gain.setValueAtTime(0,_aud.currentTime);
+  g.gain.linearRampToValueAtTime(.04,_aud.currentTime+.2);g.gain.linearRampToValueAtTime(0,_aud.currentTime+1.8);
+  o.connect(g);g.connect(_aud.destination);o.start();o.stop(_aud.currentTime+2);_audNodes.push(o);i++;setTimeout(next,1800+(Math.random()*800));}
+  next();}
+function playArcade(){_stopAud();_audOn=true;_initAud();
+  var seq=[523,659,784,1047,784,659,523,392];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='square';o.frequency.value=seq[i%seq.length];g.gain.value=.04;
+  o.connect(g);g.connect(_aud.destination);o.start();o.stop(_aud.currentTime+.12);_audNodes.push(o);i++;setTimeout(next,130);}
+  next();}
+function playVr(){_stopAud();_audOn=true;_initAud();
+  var pads=[164,196,220,246,261];
+  pads.forEach(function(f,idx){var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sine';o.frequency.value=f;g.gain.value=.02;o.connect(g);g.connect(_aud.destination);o.start();_audNodes.push(o);});}
+function playCreation(){_stopAud();_audOn=true;_initAud();
+  var notes=[261,311,349,392,440];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='triangle';o.frequency.value=notes[i%notes.length];g.gain.setValueAtTime(0,_aud.currentTime);
+  g.gain.linearRampToValueAtTime(.035,_aud.currentTime+.1);g.gain.linearRampToValueAtTime(0,_aud.currentTime+.9);
+  o.connect(g);g.connect(_aud.destination);o.start();o.stop(_aud.currentTime+1);_audNodes.push(o);i++;setTimeout(next,900+(Math.random()*400));}
+  next();}
+function playMusic(){_stopAud();_audOn=true;_initAud();
+  var bass=[65,65,82,73];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sawtooth';o.frequency.value=bass[i%bass.length];g.gain.value=.06;
+  o.connect(g);g.connect(_aud.destination);o.start();o.stop(_aud.currentTime+.4);_audNodes.push(o);i++;setTimeout(next,420);}
+  next();}
+function playCounselling(){_stopAud();_audOn=true;_initAud();
+  var notes=[261,294,330,349];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sine';o.frequency.value=notes[i%notes.length];g.gain.setValueAtTime(0,_aud.currentTime);
+  g.gain.linearRampToValueAtTime(.03,_aud.currentTime+.5);g.gain.linearRampToValueAtTime(0,_aud.currentTime+2.5);
+  o.connect(g);g.connect(_aud.destination);o.start();o.stop(_aud.currentTime+3);_audNodes.push(o);i++;setTimeout(next,2800+(Math.random()*500));}
+  next();}
+function playHydro(){_stopAud();_audOn=true;_initAud();
+  var harp=[523,659,784,988,1047];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sine';o.frequency.value=harp[Math.floor(Math.random()*harp.length)];
+  g.gain.setValueAtTime(0,_aud.currentTime);g.gain.linearRampToValueAtTime(.04,_aud.currentTime+.05);
+  g.gain.linearRampToValueAtTime(0,_aud.currentTime+1.5);o.connect(g);g.connect(_aud.destination);
+  o.start();o.stop(_aud.currentTime+1.5);_audNodes.push(o);setTimeout(next,400+(Math.random()*1200));}
+  next();}
+function playSensory(){_stopAud();_audOn=true;_initAud();
+  var chimes=[1047,1175,1319,1397,1568];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sine';o.frequency.value=chimes[Math.floor(Math.random()*chimes.length)];
+  g.gain.setValueAtTime(0,_aud.currentTime);g.gain.linearRampToValueAtTime(.03,_aud.currentTime+.05);
+  g.gain.linearRampToValueAtTime(0,_aud.currentTime+2);o.connect(g);g.connect(_aud.destination);
+  o.start();o.stop(_aud.currentTime+2);_audNodes.push(o);setTimeout(next,1200+(Math.random()*2000));}
+  next();}
+function playVeterans(){_stopAud();_audOn=true;_initAud();
+  var guitar=[196,220,261,196,165,196];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sawtooth';o.frequency.value=guitar[i%guitar.length];
+  g.gain.setValueAtTime(0,_aud.currentTime);g.gain.linearRampToValueAtTime(.04,_aud.currentTime+.02);
+  g.gain.linearRampToValueAtTime(0,_aud.currentTime+.6);o.connect(g);g.connect(_aud.destination);
+  o.start();o.stop(_aud.currentTime+.7);_audNodes.push(o);i++;setTimeout(next,650+(Math.random()*200));}
+  next();}
+function playNhs(){_stopAud();_audOn=true;_initAud();
+  var steel=[392,440,494,523,587];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sine';o.frequency.value=steel[i%steel.length];
+  g.gain.setValueAtTime(0,_aud.currentTime);g.gain.linearRampToValueAtTime(.04,_aud.currentTime+.05);
+  g.gain.linearRampToValueAtTime(0,_aud.currentTime+.8);o.connect(g);g.connect(_aud.destination);
+  o.start();o.stop(_aud.currentTime+.9);_audNodes.push(o);i++;setTimeout(next,350+(Math.random()*300));}
+  next();}
+var PLAY_FN={meadow:playMeadow,arcade:playArcade,vr:playVr,creation:playCreation,music:playMusic,counselling:playCounselling,hydro:playHydro,sensory:playSensory,veterans:playVeterans,nhs:playNhs};
+function toggleMusic(theme){var b=document.getElementById('music-btn');if(_audOn){_stopAud();if(b)b.textContent='🎵 Music OFF';}else{var fn=PLAY_FN[theme];if(fn)fn();if(b)b.textContent='🔇 Music ON';}}
+function toggleAnim(){_animOn=!_animOn;var b=document.getElementById('anim-btn');document.body.style.setProperty('--anim-play',_animOn?'running':'paused');if(b)b.textContent=_animOn?'✨ Anim ON':'🚫 Anim OFF';}
+function toggleColour(){document.body.classList.toggle('cb-mode');var b=document.getElementById('colour-btn');if(b)b.textContent=document.body.classList.contains('cb-mode')?'🎨 Std Colours':'👁 Colour Blind';}
+function doLogout(){localStorage.removeItem('knx_user');var overlay=document.createElement('div');overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;font-family:Nunito,sans-serif;text-align:center;flex-direction:column;gap:16px';overlay.innerHTML='<div style="font-size:3rem">💜</div><div style="font-size:1.4rem;font-weight:900;color:#c4b5fd">Thanks for being in K-NEXUS.</div><div style="color:#a78bfa">Come back soon!</div>';document.body.appendChild(overlay);_stopAud();setTimeout(function(){window.location.href='index.html';},2500);}
+</script></body></html>

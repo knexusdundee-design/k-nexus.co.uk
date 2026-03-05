@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>K-NEXUS — Welcome</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: 'Rajdhani', sans-serif;
+  }
+
+  /* ── SKY ── */
+  #sky {
+    position: fixed; inset: 0; z-index: 0;
+    background: linear-gradient(
+      180deg,
+      #0a0018 0%, #0e0030 12%, #1a0050 25%,
+      #2d006b 38%, #4a0080 50%,
+      #6b00a8 62%, #8200c0 72%,
+      #a000d0 82%, #c000e0 90%,
+      #e040fb 96%, #ff80ff 100%
+    );
+  }
+
+  /* Stars */
+  #stars { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+  .star {
+    position: absolute; border-radius: 50%; background: #fff;
+    animation: twinkle var(--d, 3s) ease-in-out infinite var(--delay, 0s);
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: var(--op, .8); transform: scale(1); }
+    50% { opacity: .1; transform: scale(.5); }
+  }
+
+  /* Clouds */
+  #clouds { position: fixed; top: 0; left: 0; width: 100%; height: 65%; z-index: 2; pointer-events: none; }
+  .cloud {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(2px);
+    animation: cloudDrift linear infinite;
+    opacity: 0;
+    animation-fill-mode: both;
+  }
+  @keyframes cloudDrift {
+    0%   { transform: translateX(-120%); opacity: 0; }
+    5%   { opacity: var(--op, .7); }
+    95%  { opacity: var(--op, .7); }
+    100% { transform: translateX(110vw); opacity: 0; }
+  }
+
+  /* Tree */
+  #tree-wrap {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    z-index: 5; width: 700px; height: 80vh;
+    animation: treeRise 2s cubic-bezier(.34,1.56,.64,1) 1.5s both;
+  }
+  @keyframes treeRise {
+    from { transform: translateX(-50%) translateY(120px); opacity: 0; }
+    to   { transform: translateX(-50%) translateY(0);   opacity: 1; }
+  }
+  #tree-svg { width: 100%; height: 100%; }
+
+  /* Ground */
+  #ground {
+    position: fixed; bottom: 0; left: 0; width: 100%; height: 120px; z-index: 4;
+    background: linear-gradient(180deg, transparent, #0a0018 60%);
+  }
+
+  /* Glass windows on tree */
+  .window {
+    position: absolute;
+    border-radius: 8px;
+    animation: windowGlow 3s ease-in-out infinite;
+    cursor: pointer;
+  }
+  @keyframes windowGlow {
+    0%, 100% { box-shadow: 0 0 12px 2px var(--glow); opacity: .85; }
+    50%       { box-shadow: 0 0 28px 6px var(--glow); opacity: 1; }
+  }
+
+  /* Characters in branches */
+  .character {
+    position: absolute;
+    animation: charFloat 4s ease-in-out infinite var(--delay, 0s);
+    font-size: var(--size, 28px);
+    filter: drop-shadow(0 0 8px var(--glow, #a000d0));
+    z-index: 10;
+  }
+  @keyframes charFloat {
+    0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+    50%       { transform: translateY(-8px) rotate(var(--rot2, 2deg)); }
+  }
+
+  /* Leaves */
+  .leaf {
+    position: absolute; border-radius: 50% 0 50% 0;
+    animation: leafFall linear infinite var(--delay, 0s);
+    opacity: 0; z-index: 3;
+    pointer-events: none;
+  }
+  @keyframes leafFall {
+    0%   { transform: translateY(-20px) rotate(0deg) translateX(0); opacity: 0; }
+    10%  { opacity: var(--op, .8); }
+    100% { transform: translateY(100vh) rotate(720deg) translateX(var(--drift, 60px)); opacity: 0; }
+  }
+
+  /* HUD overlay */
+  #hud {
+    position: fixed; inset: 0; z-index: 20;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .hud-logo {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: clamp(36px, 7vw, 96px); font-weight: 900;
+    color: #fff;
+    text-shadow:
+      0 0 20px rgba(200,0,255,.8),
+      0 0 60px rgba(160,0,208,.5),
+      0 0 120px rgba(120,0,180,.3);
+    letter-spacing: 12px;
+    animation: logoReveal 1.5s ease 3s both;
+  }
+  @keyframes logoReveal {
+    from { opacity: 0; letter-spacing: 40px; filter: blur(20px); }
+    to   { opacity: 1; letter-spacing: 12px; filter: blur(0); }
+  }
+  .hud-sub {
+    font-size: clamp(11px, 1.5vw, 16px);
+    color: rgba(255,200,255,.7);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-top: 10px;
+    animation: logoReveal 1.5s ease 3.5s both;
+  }
+
+  /* Voice greeting banner */
+  #greeting-bar {
+    position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%);
+    z-index: 30; background: rgba(10,0,30,.85); backdrop-filter: blur(12px);
+    border: 1px solid rgba(200,0,255,.4); border-radius: 50px;
+    padding: 14px 36px; font-size: 15px; letter-spacing: 2px; color: #e0a0ff;
+    box-shadow: 0 0 40px rgba(160,0,208,.3);
+    animation: barIn 1s cubic-bezier(.34,1.56,.64,1) 4.5s both;
+    pointer-events: none;
+  }
+  @keyframes barIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(30px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  /* Enter button */
+  #enter-btn {
+    position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
+    z-index: 30; pointer-events: all;
+    padding: 16px 60px;
+    background: linear-gradient(135deg, #7b00e0, #c000e0);
+    border: none; border-radius: 50px;
+    color: #fff; font-family: 'Cinzel Decorative', serif;
+    font-size: 16px; letter-spacing: 3px; cursor: pointer;
+    box-shadow: 0 0 30px rgba(160,0,208,.6), 0 0 60px rgba(120,0,180,.3);
+    transition: all .3s;
+    animation: barIn 1s ease 5s both;
+  }
+  #enter-btn:hover {
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 0 50px rgba(200,0,255,.8), 0 0 100px rgba(160,0,208,.5);
+  }
+
+  /* Toggle melody btn */
+  #melody-btn {
+    position: fixed; top: 20px; right: 20px; z-index: 50;
+    background: rgba(0,0,0,.4); border: 1px solid rgba(200,0,255,.3);
+    color: #c060ff; border-radius: 50%; width: 44px; height: 44px;
+    font-size: 18px; cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #melody-btn:hover { background: rgba(160,0,208,.3); }
+
+  /* Particle veil */
+  #particles { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
+  .particle {
+    position: absolute; border-radius: 50%;
+    animation: particleRise linear infinite;
+    opacity: 0;
+  }
+  @keyframes particleRise {
+    0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+    20%  { opacity: var(--op, .6); }
+    80%  { opacity: var(--op, .6); }
+    100% { transform: translateY(-20px) scale(1.5); opacity: 0; }
+  }
+
+  /* Accessibility bubble */
+  #acc-bubble {
+    position: fixed; top: 20px; left: 20px; z-index: 50;
+    background: rgba(10,0,30,.85); border: 1px solid rgba(0,229,255,.4);
+    border-radius: 14px; padding: 14px 20px; max-width: 280px;
+    font-size: 12px; color: #90e0ff; letter-spacing: 1px; line-height: 1.6;
+    animation: barIn 1s ease 5.5s both; pointer-events: all;
+  }
+  #acc-bubble strong { color: #00e5ff; font-size: 13px; }
+
+  /* Scan line overlay */
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 100; pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,.03) 2px,
+      rgba(0,0,0,.03) 4px
+    );
+  }
+</style>
+</head>
+<body>
+
+<div id="sky"></div>
+<div id="stars"></div>
+<div id="clouds"></div>
+<div id="particles"></div>
+
+<!-- Tree (SVG) -->
+<div id="tree-wrap">
+<svg id="tree-svg" viewBox="0 0 700 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Trunk -->
+  <path d="M330 800 C320 700 310 580 325 480 C340 380 360 300 350 200 C342 140 330 80 345 20"
+        stroke="#2a0040" stroke-width="38" stroke-linecap="round"/>
+  <path d="M330 800 C320 700 310 580 325 480 C340 380 360 300 350 200 C342 140 330 80 345 20"
+        stroke="#4a0060" stroke-width="24" stroke-linecap="round"/>
+  <!-- Root branches -->
+  <path d="M330 780 C260 760 180 790 120 820" stroke="#2a0040" stroke-width="16" stroke-linecap="round"/>
+  <path d="M340 780 C420 750 500 780 560 810" stroke="#2a0040" stroke-width="14" stroke-linecap="round"/>
+  <!-- Major left branches -->
+  <path d="M330 500 C280 460 200 430 140 400" stroke="#3d0055" stroke-width="20" stroke-linecap="round"/>
+  <path d="M335 400 C270 360 190 320 120 280" stroke="#3d0055" stroke-width="16" stroke-linecap="round"/>
+  <path d="M340 300 C280 250 220 200 160 160" stroke="#4a0060" stroke-width="12" stroke-linecap="round"/>
+  <!-- Major right branches -->
+  <path d="M345 480 C400 440 480 420 550 410" stroke="#3d0055" stroke-width="18" stroke-linecap="round"/>
+  <path d="M348 370 C410 330 490 290 560 260" stroke="#3d0055" stroke-width="14" stroke-linecap="round"/>
+  <path d="M350 260 C420 220 490 180 560 160" stroke="#4a0060" stroke-width="12" stroke-linecap="round"/>
+  <!-- Canopy clusters -->
+  <ellipse cx="170" cy="370" rx="95" ry="70" fill="rgba(80,0,120,.5)"/>
+  <ellipse cx="140" cy="250" rx="80" ry="60" fill="rgba(100,0,150,.5)"/>
+  <ellipse cx="200" cy="150" rx="75" ry="55" fill="rgba(120,0,170,.4)"/>
+  <ellipse cx="550" cy="380" rx="90" ry="65" fill="rgba(80,0,120,.5)"/>
+  <ellipse cx="570" cy="240" rx="80" ry="60" fill="rgba(100,0,150,.5)"/>
+  <ellipse cx="520" cy="140" rx="70" ry="55" fill="rgba(120,0,170,.4)"/>
+  <ellipse cx="350" cy="60" rx="110" ry="80" fill="rgba(130,0,180,.5)"/>
+  <ellipse cx="350" cy="160" rx="90" ry="70" fill="rgba(110,0,160,.45)"/>
+  <!-- Highlight canopy glow -->
+  <ellipse cx="170" cy="370" rx="70" ry="45" fill="rgba(180,0,255,.12)"/>
+  <ellipse cx="550" cy="380" rx="65" ry="42" fill="rgba(180,0,255,.12)"/>
+  <ellipse cx="350" cy="60" rx="80" ry="52" fill="rgba(200,0,255,.12)"/>
+  <!-- Glass windows: left branch, right branch, centre -->
+  <rect x="110" y="395" width="70" height="48" rx="8" fill="rgba(0,229,255,.12)" stroke="rgba(0,229,255,.4)" stroke-width="1.5"/>
+  <rect x="515" y="400" width="70" height="48" rx="8" fill="rgba(123,47,255,.15)" stroke="rgba(180,0,255,.4)" stroke-width="1.5"/>
+  <rect x="308" y="450" width="80" height="54" rx="8" fill="rgba(255,180,0,.1)" stroke="rgba(255,180,0,.3)" stroke-width="1.5"/>
+  <!-- Interior window glow -->
+  <rect x="117" y="402" width="55" height="34" rx="5" fill="rgba(0,229,255,.08)"/>
+  <rect x="522" y="407" width="55" height="34" rx="5" fill="rgba(180,0,255,.08)"/>
+  <rect x="316" y="458" width="63" height="38" rx="5" fill="rgba(255,180,0,.06)"/>
+</svg>
+</div>
+
+<!-- Falling leaves (DOM) -->
+<div id="leaves-wrap" style="position:fixed;inset:0;z-index:6;pointer-events:none"></div>
+
+<!-- Characters -->
+<div id="chars-wrap" style="position:fixed;inset:0;z-index:8;pointer-events:none"></div>
+
+<div id="ground"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-logo">K-NEXUS</div>
+  <div class="hud-sub">Community Sanctuary Hub — Dundee</div>
+</div>
+
+<!-- Greeting -->
+<div id="greeting-bar">🎙 Welcome back. The hub is open.</div>
+
+<!-- Accessibility bubble -->
+<div id="acc-bubble">
+  <strong>♿ Accessibility</strong><br>
+  Screen readers, subtitles, and large text are supported throughout K-NEXUS.<br>
+  <span style="color:rgba(144,224,255,.6);font-size:11px">Tap anywhere to continue without animation.</span>
+</div>
+
+<!-- Enter -->
+<button id="enter-btn" onclick="enterSite()">ENTER K-NEXUS ✦</button>
+
+<!-- Melody toggle -->
+<button id="melody-btn" onclick="toggleMelody()" title="Toggle ambient music">🎵</button>
+
+<script>
+// ── STARS ──────────────────────────────────────────────────────────
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 180; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  const sz = Math.random() * 2.5 + .5;
+  s.style.cssText = `
+    width:${sz}px;height:${sz}px;
+    left:${Math.random()*100}%;top:${Math.random()*70}%;
+    --op:${Math.random()*.6+.3};
+    --d:${2+Math.random()*4}s;
+    --delay:${Math.random()*5}s;
+  `;
+  starsEl.appendChild(s);
+}
+
+// ── CLOUDS ─────────────────────────────────────────────────────────
+const cloudsEl = document.getElementById('clouds');
+const CLOUD_COLORS = [
+  'rgba(120,0,180,.55)', 'rgba(80,0,140,.5)', 'rgba(160,20,200,.45)',
+  'rgba(200,100,255,.3)', 'rgba(100,0,160,.6)',
+];
+for (let i = 0; i < 22; i++) {
+  const c = document.createElement('div');
+  c.className = 'cloud';
+  const w = 120 + Math.random() * 280;
+  const h = 40 + Math.random() * 80;
+  const top = Math.random() * 85;
+  const dur = 18 + Math.random() * 40;
+  const col = CLOUD_COLORS[Math.floor(Math.random() * CLOUD_COLORS.length)];
+  c.style.cssText = `
+    width:${w}px;height:${h}px;top:${top}%;
+    background:${col};
+    animation-duration:${dur}s;
+    animation-delay:${-Math.random()*dur}s;
+    --op:${.35 + Math.random()*.4};
+    filter:blur(${8 + Math.random()*16}px);
+  `;
+  cloudsEl.appendChild(c);
+}
+
+// ── PARTICLES ──────────────────────────────────────────────────────
+const partEl = document.getElementById('particles');
+const PART_COLS = ['#c000e0','#7b2fff','#00e5ff','#ff80ff','#a000d0'];
+for (let i = 0; i < 60; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const sz = 2 + Math.random() * 5;
+  const dur = 6 + Math.random() * 12;
+  p.style.cssText = `
+    width:${sz}px;height:${sz}px;
+    left:${Math.random()*100}%;
+    background:${PART_COLS[Math.floor(Math.random()*5)]};
+    animation-duration:${dur}s;
+    animation-delay:${-Math.random()*dur}s;
+    --op:${.2+Math.random()*.5};
+    box-shadow:0 0 ${sz*3}px ${PART_COLS[Math.floor(Math.random()*5)]};
+  `;
+  partEl.appendChild(p);
+}
+
+// ── LEAVES ─────────────────────────────────────────────────────────
+const leavesWrap = document.getElementById('leaves-wrap');
+const LEAF_COLS = ['#6b00a8','#9400d3','#c000e0','#7b2fff','#4b0082'];
+for (let i = 0; i < 28; i++) {
+  const l = document.createElement('div');
+  l.className = 'leaf';
+  const sz = 8 + Math.random() * 16;
+  const dur = 8 + Math.random() * 14;
+  const drift = (Math.random() - .5) * 200;
+  const col = LEAF_COLS[Math.floor(Math.random() * LEAF_COLS.length)];
+  l.style.cssText = `
+    width:${sz}px;height:${sz}px;
+    left:${20+Math.random()*60}%;
+    top:${10+Math.random()*30}%;
+    background:${col};
+    animation-duration:${dur}s;
+    animation-delay:${-Math.random()*dur}s;
+    --delay:${-Math.random()*dur}s;
+    --op:${.4+Math.random()*.5};
+    --drift:${drift}px;
+    box-shadow:0 0 6px ${col};
+  `;
+  leavesWrap.appendChild(l);
+}
+
+// ── CHARACTERS in branches ─────────────────────────────────────────
+const CHARS = [
+  { emoji: '🧝', pos: 'left:9%;top:44%',  glow: '#00e5ff', rot: '-8deg',  rot2: '-5deg',  delay: '0s',    size: '30px' },
+  { emoji: '⚔️', pos: 'left:11%;top:51%', glow: '#ff80ff', rot: '3deg',   rot2: '6deg',   delay: '1.2s',  size: '22px' },
+  { emoji: '🧙', pos: 'right:9%;top:46%', glow: '#c000e0', rot: '5deg',   rot2: '2deg',   delay: '0.5s',  size: '28px' },
+  { emoji: '🏹', pos: 'right:11%;top:54%',glow: '#7b2fff', rot: '-4deg',  rot2: '-8deg',  delay: '1.8s',  size: '22px' },
+  { emoji: '🦅', pos: 'left:35%;top:20%', glow: '#ffb800', rot: '-3deg',  rot2: '3deg',   delay: '0.8s',  size: '32px' },
+  { emoji: '🌙', pos: 'right:28%;top:15%',glow: '#c0c0ff', rot: '2deg',   rot2: '-2deg',  delay: '2.2s',  size: '26px' },
+  { emoji: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', pos: 'left:42%;top:5%',  glow: '#ffffff', rot: '-1deg', rot2: '2deg', delay: '1.5s', size: '28px' },
+];
+const charsWrap = document.getElementById('chars-wrap');
+CHARS.forEach(c => {
+  const el = document.createElement('div');
+  el.className = 'character';
+  el.textContent = c.emoji;
+  el.style.cssText = `${c.pos};--glow:${c.glow};--rot:${c.rot};--rot2:${c.rot2};--delay:${c.delay};--size:${c.size};`;
+  charsWrap.appendChild(el);
+});
+
+// ── VOICE GREETING (Web Speech API) ───────────────────────────────
+let greeted = false;
+function playGreeting() {
+  if (greeted || !window.speechSynthesis) return;
+  greeted = true;
+  const msg = new SpeechSynthesisUtterance(
+    'Welcome to K-NEXUS. The sanctuary hub is open. Step inside.'
+  );
+  msg.rate = .88; msg.pitch = .9; msg.volume = .8;
+  const voices = speechSynthesis.getVoices();
+  const pref = voices.find(v => v.name.includes('UK') || v.name.includes('Daniel') || v.name.includes('Scottish'));
+  if (pref) msg.voice = pref;
+  speechSynthesis.speak(msg);
+}
+// Trigger greeting after logo animates in
+setTimeout(playGreeting, 4500);
+// Also trigger on first click (mobile autoplay policy)
+document.addEventListener('click', playGreeting, { once: true });
+
+// ── AMBIENT MELODY (Web Audio — generative) ────────────────────────
+let audioCtx = null, melodyRunning = false, melodyNodes = [];
+const MELODY_NOTES = [130.81, 146.83, 164.81, 174.61, 196, 220, 246.94]; // C D E F G A B
+let melodyTimeout = null;
+
+function startMelody() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  melodyRunning = true;
+  document.getElementById('melody-btn').textContent = '🔇';
+  playNextNote();
+}
+function stopMelody() {
+  melodyRunning = false;
+  clearTimeout(melodyTimeout);
+  melodyNodes.forEach(n => { try { n.stop(); } catch {} });
+  melodyNodes = [];
+  document.getElementById('melody-btn').textContent = '🎵';
+}
+function toggleMelody() {
+  if (melodyRunning) stopMelody();
+  else startMelody();
+}
+function playNextNote() {
+  if (!melodyRunning || !audioCtx) return;
+  const freq = MELODY_NOTES[Math.floor(Math.random() * MELODY_NOTES.length)];
+  const octMult = Math.random() > .5 ? 2 : 1;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const rev = audioCtx.createConvolver();
+  osc.type = Math.random() > .6 ? 'sine' : 'triangle';
+  osc.frequency.value = freq * octMult;
+  gain.gain.setValueAtTime(0, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(.06, audioCtx.currentTime + .3);
+  gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2.2);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + 2.5);
+  melodyNodes.push(osc);
+  const interval = 1000 + Math.random() * 1800;
+  melodyTimeout = setTimeout(playNextNote, interval);
+}
+
+// Auto-start melody after a moment
+setTimeout(startMelody, 3500);
+
+// ── ENTER ──────────────────────────────────────────────────────────
+function enterSite() {
+  stopMelody();
+  // Fade out and redirect to main site or next page
+  document.body.style.transition = 'opacity 1s';
+  document.body.style.opacity = '0';
+  setTimeout(() => {
+    window.location.href = 'main.html';
+  }, 1000);
+}
+
+// Tap to skip
+document.getElementById('acc-bubble').addEventListener('click', () => {
+  document.querySelectorAll('[style*="animation"]').forEach(el => {
+    el.style.animationDuration = '.01s';
+  });
+});
+</script>
+</body>
+</html>
