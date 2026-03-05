@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>K-NEXUS — Dundee Community Sanctuary Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&amp;family=Orbitron:wght@700;900&amp;display=swap" rel="stylesheet">
+<script>
+// CRITICAL MODAL FUNCTIONS — loaded first so buttons always work
+var ADMIN_EMAILS=['director@k-nexus.co.uk','andrew@k-nexus.co.uk','admin@k-nexus.co.uk'];
+var currentUser=null;
+function switchTab(t){
+  var isIn=t==='in';
+  var t1=document.getElementById('t1'),t2=document.getElementById('t2');
+  var sif=document.getElementById('sif'),jf=document.getElementById('jf');
+  var msg=document.getElementById('lmsg');
+  if(t1)t1.classList.toggle('a',isIn);
+  if(t2)t2.classList.toggle('a',!isIn);
+  if(sif)sif.style.display=isIn?'block':'none';
+  if(jf)jf.style.display=isIn?'none':'block';
+  if(msg)msg.textContent='';
+}
+function openModal(tab){
+  var m=document.getElementById('lm');
+  if(!m)return;
+  m.classList.add('open');
+  document.body.style.overflow='hidden';
+  switchTab(tab||'in');
+}
+function closeModal(){
+  var m=document.getElementById('lm');
+  if(m)m.classList.remove('open');
+  document.body.style.overflow='';
+}
+function doSignIn(){
+  var el=document.getElementById('si-email');
+  var pl=document.getElementById('si-pw');
+  var msg=document.getElementById('lmsg');
+  if(!el||!msg)return;
+  var email=(el.value||'').trim().toLowerCase();
+  var pw=pl?pl.value:'';
+  if(!email){msg.style.color='#ef4444';msg.textContent='Please enter your email.';return;}
+  var isAdmin=ADMIN_EMAILS.indexOf(email)>=0;
+  if(!isAdmin&&!pw){msg.style.color='#ef4444';msg.textContent='Please enter your password.';return;}
+  // First login vs returning — check localStorage
+  var prevUser=null;try{prevUser=JSON.parse(localStorage.getItem('knx_user')||'null');}catch(e){}
+  var isFirstLogin=!prevUser||(prevUser.email!==email);
+  currentUser={email:email,isAdmin:isAdmin,name:isAdmin?'Director':email.split('@')[0]};
+  // Save login state
+  localStorage.setItem('knx_user',JSON.stringify({email:email,isAdmin:isAdmin,ts:Date.now()}));
+  // Welcome message
+  var welcome=isAdmin?'Director access confirmed. Opening admin panel...'
+    :(isFirstLogin?'Welcome to K-NEXUS! Great to have you here.':'Welcome back to K-NEXUS! Good to see you again.');
+  msg.style.color='#22c55e';msg.textContent=welcome;
+  // Update nav button
+  var nb=document.getElementById('nbtn');
+  if(nb){
+    nb.textContent=isAdmin?'⚙ ADMIN':'My Account';
+    nb.style.cssText+='background:linear-gradient(135deg,#f97316,#ef4444)!important';
+    nb.onclick=function(e){if(e)e.preventDefault();openAdmin();return false;};
+  }
+  // Show director quickbar
+  if(isAdmin){
+    var existing=document.getElementById('admin-quickbar');
+    if(!existing){
+      var bar=document.createElement('div');
+      bar.id='admin-quickbar';
+      bar.style.cssText='position:fixed;top:62px;left:0;right:0;z-index:9995;background:linear-gradient(135deg,rgba(249,115,22,.15),rgba(239,68,68,.1));border-bottom:2px solid #f97316;padding:8px 24px;display:flex;align-items:center;gap:12px';
+      bar.innerHTML='<span style="font-family:Orbitron,sans-serif;font-size:.75rem;font-weight:900;color:#f97316;letter-spacing:2px">DIRECTOR MODE</span><button onclick="openAdmin()" style="background:linear-gradient(135deg,#f97316,#ef4444);border:none;border-radius:8px;padding:6px 18px;color:#fff;font-family:Nunito,sans-serif;font-weight:800;cursor:pointer;font-size:.85rem">⚙ OPEN ADMIN PANEL</button><span style="color:#7070a0;font-size:.78rem;margin-left:auto">Signed in as '+email+'</span>';
+      document.body.appendChild(bar);
+    }
+  }
+  // Show first-login access needs modal if first time
+  if(isFirstLogin&&!isAdmin){
+    var acc=null;try{acc=JSON.parse(localStorage.getItem('knx_access')||'null');}catch(e){}
+    if(!acc){
+      closeModal();
+      setTimeout(function(){
+        var m=document.getElementById('access-modal');
+        if(m)m.style.display='flex';
+      },400);
+      return;
+    }
+  }
+  closeModal();
+  if(isAdmin){openAdmin();}
+}
+function doRegister(){
+  var msg=document.getElementById('lmsg');
+  var rb=document.getElementById('reg-btn');
+  var pi=document.getElementById('photo-inp');
+  if(!msg)return;
+  var hasPhoto=pi&&pi.files.length>0;
+  var name=((document.getElementById('reg-name')||{}).value||'').trim();
+  var email=((document.getElementById('reg-email')||{}).value||'').trim();
+  var dob=((document.getElementById('reg-dob')||{}).value||'');
+  var addr=((document.getElementById('reg-addr')||{}).value||'').trim();
+  var phone=((document.getElementById('reg-phone')||{}).value||'').trim();
+  var ec=((document.getElementById('reg-ec')||{}).value||'').trim();
+  var access=((document.getElementById('reg-access')||{}).value||'').trim();
+  var plan=((document.getElementById('reg-plan')||{}).value||'');
+  var perr=document.getElementById('photo-err');
+  if(!hasPhoto){if(perr)perr.style.display='block';msg.style.color='#ef4444';msg.textContent='Profile photo required.';return;}
+  if(!name){msg.style.color='#ef4444';msg.textContent='Please enter your full name.';return;}
+  if(!email){msg.style.color='#ef4444';msg.textContent='Please enter your email.';return;}
+  if(!dob){msg.style.color='#ef4444';msg.textContent='Please enter your date of birth.';return;}
+  if(!addr){msg.style.color='#ef4444';msg.textContent='Please enter your address.';return;}
+  var age=Math.floor((new Date()-new Date(dob))/(365.25*24*3600*1000));
+  if(age<16){msg.style.color='#ef4444';msg.textContent='K-NEXUS is 16+. Family memberships cover children with a guardian.';return;}
+  msg.style.color='#c4b5fd';msg.textContent='Submitting...';
+  if(rb)rb.disabled=true;
+  var fd=new FormData();
+  fd.append('name',name);fd.append('email',email);fd.append('phone',phone||'Not provided');
+  fd.append('dob',dob);fd.append('address',addr);fd.append('emergency_contact',ec||'Not provided');
+  fd.append('accessibility',access||'None');fd.append('plan',plan);
+  if(pi&&pi.files[0])fd.append('photo',pi.files[0]);
+  fetch('register.php',{method:'POST',body:fd})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.ok){msg.style.color='#22c55e';msg.textContent='✔ Registered! Your RFID card will be ready on your first visit.';setTimeout(closeModal,3500);}
+      else{msg.style.color='#ef4444';msg.textContent='Error: '+(d.msg||'Please email director@k-nexus.co.uk');if(rb)rb.disabled=false;}
+    })
+    .catch(function(){msg.style.color='#22c55e';msg.textContent='✔ Registration received! We will be in touch within 2 working days.';setTimeout(closeModal,3000);});
+}
+function showForgot(type){
+  var box=document.getElementById('forgot-box');
+  var title=document.getElementById('forgot-title');
+  if(!box)return;
+  if(box.style.display==='block'&&box.dataset.type===type){box.style.display='none';return;}
+  box.dataset.type=type;
+  box.style.display='block';
+  if(title)title.textContent=type==='password'?'Reset Your Password':'Find Your Account by Email';
+}
+function submitForgot(){
+  var email=document.getElementById('forgot-email');
+  var msg=document.getElementById('lmsg');
+  if(!email||!email.value.trim()){if(msg){msg.style.color='#ef4444';msg.textContent='Enter your email address.';}return;}
+  if(msg){msg.style.color='#22c55e';msg.textContent='Reset request sent! Check director@k-nexus.co.uk or contact the hub directly.';}
+  document.getElementById('forgot-box').style.display='none';
+}
+</script>
+<style>
+:root{--pu:#8b5cf6;--pu2:#6d28d9;--pu3:#c4b5fd;--pi:#ec4899;--cy:#06b6d4;--or:#f97316;--ye:#facc15;--gr:#22c55e;--bg:#07071a;--bg2:#0d0d22;--tx:#f0f0ff;--dm:#7070a0;--glass:rgba(255,255,255,0.05);--gb:rgba(255,255,255,0.1)}
+*{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:'Nunito',sans-serif;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--pu);border-radius:3px}
+#nav{position:fixed;top:0;left:0;right:0;z-index:1000;height:62px;display:flex;align-items:center;padding:0 28px;gap:4px;background:rgba(7,7,26,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(139,92,246,.25);transition:background .3s}
+#nl{font-family:'Orbitron',sans-serif;font-size:1.15rem;font-weight:900;background:linear-gradient(135deg,#c4b5fd,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-right:auto;letter-spacing:2px}
+.nl{padding:7px 13px;color:var(--dm);font-weight:700;font-size:.85rem;cursor:pointer;transition:color .2s;white-space:nowrap;border-radius:8px}.nl:hover{color:var(--pu3);background:rgba(139,92,246,.1)}
+#nbtn{background:linear-gradient(135deg,#7c3aed,#ec4899);border:none;border-radius:20px;padding:11px 26px;color:#fff;font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;cursor:pointer;margin-left:8px;transition:all .3s;white-space:nowrap;letter-spacing:.3px}
+#nbtn:hover{transform:scale(1.06);box-shadow:0 4px 20px rgba(139,92,246,.6)}
+#hero{position:relative;min-height:100vh;overflow:hidden;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:120px 24px 100px}
+#sky{position:absolute;inset:0;background:linear-gradient(180deg,#03001a 0%,#140030 20%,#280060 45%,#1a3a6b 68%,#103020 82%,#071a0e 100%)}
+#stars-c{position:absolute;inset:0;pointer-events:none}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--d) ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.08}50%{opacity:.95}}
+#moon{position:absolute;top:7%;right:10%;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fffde7,#ffd54f);box-shadow:0 0 60px 20px rgba(255,213,79,.3);animation:mpulse 4s ease-in-out infinite}
+@keyframes mpulse{0%,100%{box-shadow:0 0 60px 20px rgba(255,213,79,.3)}50%{box-shadow:0 0 100px 40px rgba(255,213,79,.5)}}
+.aurora{position:absolute;left:0;right:0;height:180px;filter:blur(40px);opacity:.35;animation:aw 7s ease-in-out infinite alternate}
+.a1{top:12%;background:linear-gradient(90deg,transparent,#8b5cf6,#ec4899,transparent)}
+.a2{top:22%;background:linear-gradient(90deg,transparent,#06b6d4,#8b5cf6,transparent);animation-delay:-3.5s}
+@keyframes aw{0%{transform:scaleX(1) translateY(0)}100%{transform:scaleX(1.08) translateY(18px)}}
+#meadow{position:absolute;bottom:0;left:0;right:0;height:240px;pointer-events:none}
+.gblade{position:absolute;bottom:0;width:3px;border-radius:3px 3px 0 0;background:linear-gradient(0deg,#0a3a18,#3dba6a);transform-origin:bottom;animation:sway var(--sw) ease-in-out infinite var(--sd)}
+@keyframes sway{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(9deg)}}
+.ff{position:absolute;width:4px;height:4px;border-radius:50%;background:#fffc00;box-shadow:0 0 8px 3px rgba(255,252,0,.7);animation:fly var(--fd) ease-in-out infinite var(--fsd)}
+@keyframes fly{0%{transform:translate(0,0);opacity:0}20%{opacity:1}80%{opacity:1}100%{transform:translate(var(--fx),var(--fy));opacity:0}}
+.achar{position:absolute;bottom:55px;width:var(--w);height:var(--h);background:var(--cc);border-radius:25px 25px 8px 8px;animation:breathe 3.2s ease-in-out infinite var(--sd2)}
+.achar::before{content:'';position:absolute;top:calc(-1 * var(--hs));left:50%;transform:translateX(-50%);width:var(--hw);height:var(--hs);border-radius:50%;background:var(--cc)}
+@keyframes breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.cloud-bg{position:absolute;border-radius:50px;background:rgba(180,100,255,.12);filter:blur(20px);animation:cloudrift linear infinite}
+@keyframes cloudrift{from{transform:translateX(-400px)}to{transform:translateX(calc(100vw + 400px))}}
+#hc{position:relative;z-index:10;text-align:center;max-width:880px}
+#hlogo{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:18px}
+#hlogosvg{filter:drop-shadow(0 0 18px var(--pu))}
+#hlogotxt{font-family:'Orbitron',sans-serif;font-size:2.6rem;font-weight:900;background:linear-gradient(135deg,#c4b5fd,#ec4899,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:2px}
+#htag{color:var(--pu3);font-size:1.2rem;font-weight:600;margin-bottom:8px}
+#hsub{color:var(--dm);font-size:1rem;line-height:1.8;max-width:620px;margin:0 auto 24px}
+#hbadge{display:inline-block;background:rgba(139,92,246,.18);border:1px solid var(--pu);border-radius:100px;padding:7px 20px;font-size:.82rem;color:var(--pu3);margin-bottom:28px;letter-spacing:1px}
+#hbtns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:32px}
+.hbtn{padding:15px 34px;border-radius:50px;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;border:none;transition:all .3s}
+.hbtn.p{background:linear-gradient(135deg,var(--pu),var(--pi));color:#fff;box-shadow:0 8px 30px rgba(139,92,246,.4)}
+.hbtn.p:hover{transform:translateY(-4px);box-shadow:0 16px 48px rgba(139,92,246,.6)}
+.hbtn.o{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.28);backdrop-filter:blur(8px)}
+.hbtn.o:hover{border-color:var(--pu3);background:rgba(139,92,246,.15);transform:translateY(-3px)}
+#scrolld{position:absolute;bottom:28px;left:50%;transform:translateX(-50%);color:var(--pu3);font-size:1.8rem;animation:bob 2s ease-in-out infinite;cursor:pointer;z-index:10}
+@keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(10px)}}
+#statsbar{background:linear-gradient(135deg,#1a0040,#0d0025,#001a3a);padding:28px 24px;display:flex;justify-content:center;flex-wrap:wrap;border-top:1px solid rgba(196,181,253,.18);border-bottom:1px solid rgba(196,181,253,.18)}
+.stat{text-align:center;padding:8px 36px;border-right:1px solid rgba(255,255,255,.08)}.stat:last-child{border-right:none}
+.sn{font-family:'Orbitron',sans-serif;font-size:2rem;font-weight:900;color:var(--pu3)}
+.sl{font-size:.75rem;color:var(--dm);text-transform:uppercase;letter-spacing:2px;margin-top:3px}
+#lm{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;pointer-events:auto}
+#lm.open{display:flex}
+#lb{background:linear-gradient(135deg,#1e1e42,#0f0f2a);border:2px solid var(--pu);border-radius:22px;padding:36px 32px;width:100%;max-width:460px;position:relative;box-shadow:0 0 100px rgba(139,92,246,.5);animation:popin .3s cubic-bezier(.34,1.56,.64,1);pointer-events:auto;overflow-y:auto;max-height:92vh}
+@keyframes popin{from{transform:scale(.82);opacity:0}to{transform:scale(1);opacity:1}}
+.mcl{position:absolute;top:14px;right:18px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:1.2rem;cursor:pointer;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;z-index:10000}.mcl:hover{background:rgba(239,68,68,.3);color:#fff}
+#lt{font-family:'Orbitron',sans-serif;font-size:1.4rem;color:#fff;margin-bottom:6px;text-align:center;font-weight:900}
+#ls{text-align:center;color:#a0a0c0;font-size:.9rem;margin-bottom:24px}
+.ltabs{display:flex;margin-bottom:24px;border-radius:10px;overflow:hidden;border:2px solid rgba(139,92,246,.4)}
+.ltab{flex:1;padding:13px;text-align:center;cursor:pointer;font-weight:800;font-size:1rem;background:rgba(255,255,255,.05);color:#a0a0c0;transition:all .2s;user-select:none}
+.ltab.a{background:linear-gradient(135deg,var(--pu),var(--pi));color:#fff}
+.ltab:hover:not(.a){background:rgba(139,92,246,.15);color:#fff}
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:.85rem;color:#c0c0e0;margin-bottom:6px;font-weight:700}
+.fg input,.fg select{width:100%;padding:13px 16px;background:rgba(255,255,255,.08);border:2px solid rgba(139,92,246,.3);border-radius:9px;color:#fff;font-family:'Nunito',sans-serif;font-size:1rem;outline:none;transition:border .2s;box-sizing:border-box}
+.fg input:focus,.fg select:focus{border-color:var(--pu);background:rgba(139,92,246,.1)}
+.fg select option{background:#1a1a3a;color:#fff}
+.blbtn{width:100%;padding:16px;background:linear-gradient(135deg,#7c3aed,#ec4899);border:none;border-radius:12px;color:#fff;font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900;cursor:pointer;margin-top:10px;transition:all .2s;display:block;pointer-events:auto;letter-spacing:.5px}
+.blbtn:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(139,92,246,.6);background:linear-gradient(135deg,#6d28d9,#db2777)}
+.blbtn:active{transform:translateY(0)}
+.blbtn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+#lmsg{text-align:center;margin-top:12px;font-size:.9rem;color:var(--gr);min-height:20px;font-weight:600}
+.sec{padding:80px 0}
+.sinner{max-width:1200px;margin:0 auto;padding:0 36px}
+.stit{font-family:'Orbitron',sans-serif;font-size:1.9rem;font-weight:900;background:linear-gradient(135deg,var(--pu3),var(--pi));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.ssub{color:var(--dm);font-size:.95rem;line-height:1.8;max-width:580px;margin-bottom:36px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:20px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
+.mcard{background:var(--glass);border:1px solid var(--gb);border-radius:18px;padding:28px 22px;transition:all .3s;position:relative;overflow:hidden}
+.mcard:hover{transform:translateY(-7px);border-color:var(--pu)}
+.mcard.feat{border-color:var(--pi);background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(236,72,153,.07))}
+.mbadge{display:inline-block;border-radius:100px;padding:3px 13px;font-size:.7rem;font-weight:700;letter-spacing:1px;margin-bottom:14px;text-transform:uppercase;border:1px solid}
+.mprice{font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:900;color:var(--pu3);margin-bottom:3px}
+.mprice span{font-size:.9rem;color:var(--dm);font-family:'Nunito',sans-serif}
+.mname{font-size:1.2rem;font-weight:800;margin-bottom:4px}
+.mdesc{color:var(--dm);font-size:.86rem;margin-bottom:16px;line-height:1.6}
+.mperks{list-style:none;margin-bottom:20px}
+.mperks li{padding:5px 0;font-size:.86rem;border-bottom:1px solid rgba(255,255,255,.05)}
+.mperks li::before{content:'✦ ';color:var(--pu3);font-size:.7rem}
+.mbtn{width:100%;padding:11px;border-radius:10px;font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;border:none;transition:all .3s}
+.mbtn.s{background:linear-gradient(135deg,var(--pu),var(--pi));color:#fff}
+.mbtn.o{background:transparent;border:2px solid var(--pu);color:var(--pu3)}
+.mbtn:hover{transform:scale(1.03)}
+.pop-tag{position:absolute;top:-1px;right:18px;background:linear-gradient(135deg,var(--pu),var(--pi));color:#fff;font-size:.65rem;font-weight:800;padding:3px 13px;border-radius:0 0 8px 8px;letter-spacing:1px}
+.rcard{border-radius:14px;overflow:hidden;cursor:pointer;transition:all .3s;border:1px solid var(--gb)}
+.rcard:hover{transform:translateY(-6px) scale(1.02);border-color:var(--pu);box-shadow:0 18px 50px rgba(139,92,246,.28)}
+.rimg{height:150px;display:flex;align-items:center;justify-content:center;font-size:3.2rem}
+.rinfo{background:var(--glass);padding:14px}
+.rno{font-size:.7rem;color:var(--dm);font-weight:700;letter-spacing:2px;margin-bottom:3px}
+.rn{font-weight:800;font-size:.95rem;margin-bottom:3px}
+.rtag{font-size:.77rem;color:var(--pu3)}
+.tc{background:linear-gradient(135deg,#78350f,#451a03)}.tk{background:linear-gradient(135deg,#7f1d1d,#450a0a)}
+.ta{background:linear-gradient(135deg,#1e1b4b,#312e81);animation:ag 2s ease-in-out infinite alternate}
+@keyframes ag{from{box-shadow:inset 0 0 30px rgba(99,102,241,.3)}to{box-shadow:inset 0 0 60px rgba(236,72,153,.4)}}
+.tv{background:linear-gradient(135deg,#064e3b,#065f46)}.tan{background:linear-gradient(135deg,#831843,#9d174d)}
+.tg{background:linear-gradient(135deg,#1e3a5f,#1e40af)}.ts{background:linear-gradient(135deg,#14532d,#166534)}
+.tm{background:linear-gradient(135deg,#581c87,#7e22ce)}.te{background:linear-gradient(135deg,#0c4a6e,#0369a1)}
+.tcl{background:linear-gradient(135deg,#1e3a3a,#134e4a)}.tth{background:linear-gradient(135deg,#2e1065,#3b0764)}
+.tvt{background:linear-gradient(135deg,#1c1917,#292524)}.tne{background:linear-gradient(135deg,#14532d,#052e16)}
+.tst{background:linear-gradient(135deg,#4c0519,#881337)}.tad{background:linear-gradient(135deg,#1e1b4b,#1e1b4b)}
+.n4hero{background:linear-gradient(135deg,#140028,#080018,#001428);border:1px solid rgba(139,92,246,.35);border-radius:22px;padding:44px;text-align:center;margin-bottom:36px;position:relative;overflow:hidden}
+.n4hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(139,92,246,.18),transparent 65%)}
+.n4logo{font-family:'Orbitron',sans-serif;font-size:2.8rem;font-weight:900;background:linear-gradient(135deg,#c4b5fd,#ec4899,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;position:relative}
+.n4tag{font-size:1.05rem;color:var(--pu3);position:relative;margin-bottom:14px}
+.n4desc{color:var(--dm);max-width:560px;margin:0 auto 24px;line-height:1.8;position:relative;font-size:.93rem}
+.n4pills{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:24px;position:relative}
+.n4pill{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:6px 16px;font-size:.8rem;font-weight:600}
+.n4pill.g{border-color:#22c55e;color:#86efac}.n4pill.b{border-color:#ef4444;color:#fca5a5;text-decoration:line-through}
+.n4btn{background:linear-gradient(135deg,var(--pu),var(--pi));border:none;border-radius:20px;padding:13px 32px;color:#fff;font-family:'Nunito',sans-serif;font-weight:800;font-size:.95rem;cursor:pointer;transition:all .3s;position:relative}
+.n4btn:hover{transform:scale(1.05);box-shadow:0 8px 28px rgba(139,92,246,.45)}
+.n4feed{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.n4post{background:var(--glass);border:1px solid var(--gb);border-radius:14px;padding:18px;transition:all .3s}
+.n4post:hover{border-color:var(--pu);transform:translateY(-4px)}
+.n4ph{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.n4av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;background:rgba(139,92,246,.18)}
+.n4u{font-weight:700;font-size:.87rem}.n4t{font-size:.72rem;color:var(--dm)}.n4tg{font-size:.72rem;color:var(--pu3);margin-top:1px}
+.n4pb{color:var(--dm);font-size:.87rem;line-height:1.6;margin-bottom:10px}
+.n4pa{display:flex;gap:14px}
+.n4a{background:none;border:none;color:var(--dm);font-size:.82rem;cursor:pointer;font-family:'Nunito',sans-serif}
+.n4a:hover{color:var(--pu3)}
+.mcrd{border-radius:14px;overflow:hidden;transition:all .3s;border:1px solid var(--gb);cursor:pointer}
+.mcrd:hover{transform:translateY(-6px);border-color:var(--pi);box-shadow:0 18px 50px rgba(236,72,153,.18)}
+.mci{height:190px;display:flex;align-items:center;justify-content:center;font-size:3.8rem}
+.mb1{background:linear-gradient(135deg,#1a0040,#2d0060)}.mb2{background:linear-gradient(135deg,#0d2b18,#052e16)}
+.mb3{background:linear-gradient(135deg,#1e1b4b,#0c0a3e)}.mb4{background:linear-gradient(135deg,#4c0519,#881337)}
+.mcinf{background:var(--glass);padding:14px}
+.mcn{font-weight:800;margin-bottom:3px}.mcp{color:var(--pu3);font-weight:700;font-size:1.05rem;margin-bottom:10px}
+.mcbtn{width:100%;padding:9px;border-radius:9px;border:none;background:linear-gradient(135deg,var(--pu),var(--pi));color:#fff;font-family:'Nunito',sans-serif;font-weight:700;cursor:pointer}
+.tcard{border-radius:18px;overflow:hidden;transition:all .3s;border:1px solid var(--gb);cursor:pointer}
+.tcard:hover{transform:translateY(-7px);box-shadow:0 22px 56px rgba(6,182,212,.25)}
+.timg{height:170px;display:flex;align-items:center;justify-content:center;font-size:3.8rem}
+.ti1{background:linear-gradient(135deg,#0c4a6e,#0369a1)}.ti2{background:linear-gradient(135deg,#064e3b,#065f46)}
+.ti3{background:linear-gradient(135deg,#1e3a5f,#1e40af)}.ti4{background:linear-gradient(135deg,#78350f,#92400e)}
+.tinf{background:var(--glass);padding:18px}
+.tn{font-weight:800;font-size:1rem;margin-bottom:5px}.td{color:var(--dm);font-size:.87rem;line-height:1.6;margin-bottom:10px}
+.tmeta{display:flex;gap:10px;flex-wrap:wrap}
+.tpr{background:rgba(6,182,212,.12);border:1px solid #06b6d4;color:#67e8f9;border-radius:100px;padding:3px 11px;font-size:.76rem;font-weight:700}
+.tage{background:rgba(250,204,21,.1);border:1px solid #facc15;color:#fde047;border-radius:100px;padding:3px 11px;font-size:.76rem;font-weight:700}
+.tbtn{margin-top:13px;width:100%;padding:10px;border-radius:9px;border:none;background:linear-gradient(135deg,#0891b2,#06b6d4);color:#fff;font-family:'Nunito',sans-serif;font-weight:700;cursor:pointer}
+.acrd{background:var(--glass);border:1px solid var(--gb);border-radius:14px;padding:22px;transition:all .3s}
+.acrd:hover{border-color:var(--pu3);transform:translateY(-4px)}
+.aico{font-size:2.3rem;margin-bottom:12px}.atn{font-weight:800;font-size:1rem;margin-bottom:7px}
+.att{color:var(--dm);font-size:.87rem;line-height:1.7}
+.lcrd{background:var(--glass);border:1px solid var(--gb);border-radius:18px;padding:28px;text-align:center;transition:all .3s}
+.lcrd:hover{border-color:var(--pu3);transform:translateY(-5px)}
+.lcrd svg{max-width:130px;margin:0 auto 14px;display:block}
+.lcn{font-weight:800;margin-bottom:3px}.lcd{color:var(--dm);font-size:.83rem}
+.ccrd{background:var(--glass);border:1px solid var(--gb);border-radius:14px;padding:22px;text-align:center;transition:all .3s}
+.ccrd:hover{border-color:var(--pu3)}
+.cci{font-size:1.9rem;margin-bottom:8px}.ccl{color:var(--dm);font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:5px}
+.ccv{font-weight:700;font-size:.9rem}
+footer{background:linear-gradient(180deg,var(--bg2),#030310);border-top:1px solid rgba(139,92,246,.18);padding:44px 36px 22px;text-align:center}
+#flogo{font-family:'Orbitron',sans-serif;font-size:1.7rem;font-weight:900;background:linear-gradient(135deg,#c4b5fd,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:7px}
+footer p{color:var(--dm);font-size:.82rem;line-height:2}
+.sup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;margin-top:20px}
+.sup-card{background:var(--glass);border:1px solid var(--gb);border-radius:14px;padding:20px}
+.sup-card h3{color:var(--pu3);font-weight:800;margin-bottom:12px;font-size:1rem}
+.sup-card ul{list-style:none}.sup-card li{padding:5px 0;font-size:.87rem;border-bottom:1px solid rgba(255,255,255,.05);color:var(--dm)}
+.sup-card li a{color:var(--cy);transition:color .2s}.sup-card li a:hover{color:var(--pu3)}
+.muted{color:var(--dm)!important}
+#riftb{position:fixed;bottom:26px;right:26px;z-index:5000}
+#riftbtn{width:62px;height:62px;border-radius:50%;background:linear-gradient(135deg,var(--pu),var(--pi));border:none;cursor:pointer;font-size:1.5rem;box-shadow:0 8px 28px rgba(139,92,246,.45);transition:all .3s;animation:rp 3s ease-in-out infinite}
+@keyframes rp{0%,100%{box-shadow:0 8px 28px rgba(139,92,246,.45)}50%{box-shadow:0 8px 56px rgba(236,72,153,.65)}}
+#riftbtn:hover{transform:scale(1.1)}
+#riftchat{display:none;position:absolute;bottom:74px;right:0;width:340px;background:linear-gradient(135deg,#1a1a3a,#0f0f25);border:1px solid var(--pu);border-radius:18px;box-shadow:0 18px 50px rgba(139,92,246,.35);overflow:visible}
+#riftchat.open{display:flex;flex-direction:column}
+#rchead{background:linear-gradient(135deg,var(--pu),var(--pi));padding:13px 15px;display:flex;align-items:center;gap:9px;font-weight:800;font-size:.9rem}
+#rcmsgs{height:220px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:9px;overflow-x:hidden}
+.rm{max-width:86%;padding:9px 13px;border-radius:13px;font-size:.83rem;line-height:1.5}
+.rm.ai{background:rgba(139,92,246,.18);border:1px solid rgba(139,92,246,.28);border-radius:13px 13px 13px 3px;align-self:flex-start}
+.rm.user{background:#6d28d9;border-radius:13px 13px 3px 13px;align-self:flex-end}
+#rcirow{display:flex;padding:11px;gap:8px;border-top:1px solid var(--gb);align-items:center}
+#rcin{flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(139,92,246,.4);border-radius:9px;padding:9px 13px;color:#fff;font-family:'Nunito',sans-serif;font-size:.9rem;outline:none;min-height:40px}
+#rcsend{background:linear-gradient(135deg,var(--pu),var(--pi));border:none;border-radius:9px;min-width:44px;height:40px;cursor:pointer;font-size:1.1rem;color:#fff;font-weight:900;padding:0 12px;flex-shrink:0}
+@media(max-width:700px){#hlogotxt{font-size:1.8rem}#hbtns{flex-direction:column;align-items:center}.stat{padding:8px 16px}.nl{display:none}.sinner{padding:0 18px}}
+</style>
+</head>
+<body>
+<nav id="nav">
+  <div id="nl">K&#10022;NEXUS</div>
+  <span class="nl" onclick="document.querySelector('#about').scrollIntoView({behavior:'smooth'})">About</span>
+  <span class="nl" onclick="document.querySelector('#rooms').scrollIntoView({behavior:'smooth'})">Spaces</span>
+  <span class="nl" onclick="document.querySelector('#membership').scrollIntoView({behavior:'smooth'})">Membership</span>
+  <span class="nl" onclick="document.querySelector('#nexus4').scrollIntoView({behavior:'smooth'})">Nexus 4</span>
+  <span class="nl" onclick="document.querySelector('#nexusflow').scrollIntoView({behavior:'smooth'})">Nexus Flow</span>
+  <span class="nl" onclick="document.querySelector('#merch').scrollIntoView({behavior:'smooth'})">Shop</span>
+  <span class="nl" onclick="document.querySelector('#daytrips').scrollIntoView({behavior:'smooth'})">Day Trips</span>
+  <span class="nl" onclick="document.querySelector('#contact').scrollIntoView({behavior:'smooth'})">Contact</span>
+  <button id="nbtn" onclick="openModal('in')">Sign In / Join</button>
+  <button id="logout-btn" onclick="doLogout()" style="display:none;background:rgba(239,68,68,.15);border:1px solid #ef4444;border-radius:20px;padding:5px 14px;color:#fca5a5;cursor:pointer;font-size:.78rem;font-family:Nunito,sans-serif;font-weight:700;margin-left:6px">🚪 Logout</button>
+</nav>
+<div id="lm">
+  <div id="lb" onclick="event.stopPropagation()">
+    <button class="mcl" id="modal-close" onclick="closeModal()">&#10005;</button>
+    <div id="lt">K&#10022;NEXUS Portal</div>
+    <div id="ls">Your community. Your space.</div>
+    <div class="ltabs">
+      <div class="ltab a" id="t1" onclick="switchTab('in')">Sign In</div>
+      <div class="ltab" id="t2" onclick="switchTab('join')">Join Free &#8594;</div>
+    </div>
+    <div id="sif">
+      <div class="fg"><label>Email Address</label><input id="si-email" type="email" placeholder="your@email.com" autocomplete="email"></div>
+      <div class="fg" id="pw-row"><label>Password <span id="pw-note" style="color:#a78bfa;font-size:.8rem">(Director: leave blank on first login)</span></label>
+        <div style="position:relative">
+          <input id="si-pw" type="password" placeholder="Your password" autocomplete="current-password" style="width:100%;padding:13px 46px 13px 16px;background:rgba(255,255,255,.08);border:2px solid rgba(139,92,246,.3);border-radius:9px;color:#fff;font-family:Nunito,sans-serif;font-size:1rem;outline:none;transition:border .2s;box-sizing:border-box">
+          <button type="button" onclick="var i=document.getElementById('si-pw');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'👁':'🙈'" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#a78bfa;padding:0;line-height:1">👁</button>
+        </div>
+      </div>
+      <button class="blbtn" id="si-btn" type="button" onclick="doSignIn()">Sign In &#8594;</button>
+      <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:.82rem">
+        <button type="button" onclick="showForgot('password')" style="background:none;border:none;color:#a78bfa;cursor:pointer;font-family:Nunito,sans-serif;font-size:.82rem;padding:0;text-decoration:underline">Forgot Password?</button>
+        <button type="button" onclick="showForgot('email')" style="background:none;border:none;color:#a78bfa;cursor:pointer;font-family:Nunito,sans-serif;font-size:.82rem;padding:0;text-decoration:underline">Forgot Email?</button>
+      </div>
+      <div id="forgot-box" style="display:none;margin-top:14px;padding:14px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.3);border-radius:10px">
+        <div id="forgot-title" style="font-weight:800;margin-bottom:8px;font-size:.9rem;color:#c4b5fd"></div>
+        <input id="forgot-email" type="email" placeholder="Enter your registered email" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.08);border:2px solid rgba(139,92,246,.3);border-radius:8px;color:#fff;font-family:Nunito,sans-serif;font-size:.9rem;outline:none;box-sizing:border-box;margin-bottom:10px">
+        <button type="button" onclick="submitForgot()" class="blbtn" style="margin-top:0;padding:11px">Send Reset Link &#8594;</button>
+      </div>
+    </div>
+    <div id="jf" style="display:none">
+      <div class="fg">
+        <label>Profile Photo <span style="color:#ec4899;font-weight:800">* Required</span></label>
+        <div id="photo-drop" style="position:relative;border:2px dashed rgba(139,92,246,.5);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all .3s;background:rgba(139,92,246,.06)">
+          <div id="photo-preview" style="display:none;margin-bottom:8px">
+            <img id="photo-img" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #8b5cf6;display:block;margin:0 auto" src="" alt="Preview">
+          </div>
+          <div id="photo-placeholder" style="pointer-events:none">
+            <div style="font-size:2rem;margin-bottom:6px">&#128247;</div>
+            <div style="color:#c4b5fd;font-weight:700;font-size:.88rem">Click to upload your photo</div>
+            <div style="color:#7070a0;font-size:.75rem;margin-top:4px">JPG or PNG — shows on your member card and Nexus 4 profile</div>
+          </div>
+          <input id="photo-inp" type="file" accept="image/jpeg,image/png,image/gif,image/webp" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer">
+        </div>
+        <div id="photo-err" style="color:#ef4444;font-size:.78rem;margin-top:4px;display:none">Profile photo is required to register.</div>
+      </div>
+      <div class="fg"><label>Full Name <span style="color:#ec4899">*</span></label><input id="reg-name" type="text" placeholder="Your full name"></div>
+      <div class="fg"><label>Email Address <span style="color:#ec4899">*</span></label><input id="reg-email" type="email" placeholder="your@email.com"></div>
+      <div class="fg"><label>Phone Number</label><input id="reg-phone" type="tel" placeholder="07xxx xxxxxx"></div>
+      <div class="fg"><label>Date of Birth <span style="color:#ec4899">*</span></label><input id="reg-dob" type="date"></div>
+      <div class="fg"><label>Home Address <span style="color:#ec4899">*</span></label><input id="reg-addr" type="text" placeholder="Street, City, Postcode"></div>
+      <div class="fg"><label>Emergency Contact</label><input id="reg-ec" type="text" placeholder="Name & phone number"></div>
+      <div class="fg"><label>Accessibility / Support Needs (optional)</label><input id="reg-access" type="text" placeholder="e.g. Autism, ADHD, PTSD, wheelchair — leave blank if not applicable"></div>
+      <div class="fg"><label>Membership Plan</label>
+        <select id="reg-plan">
+          <option>Community Free - Free forever</option>
+          <option>Explorer - &pound;10/mo</option>
+          <option>Sanctuary - &pound;25/mo</option>
+          <option>Platinum - &pound;50/mo</option>
+          <option>Family Free - Free forever</option>
+          <option>Family Plus - &pound;20/mo</option>
+          <option>Family Sanctuary - &pound;40/mo</option>
+        </select>
+      </div>
+      <div style="font-size:.75rem;color:#7070a0;line-height:1.6;margin-bottom:10px">By registering you agree to K-NEXUS Dundee CIC&#39;s community standards. Your data is held securely under GDPR and never sold. CIC SC881084.</div>
+      <button class="blbtn" id="reg-btn" type="button" onclick="doRegister()">Create My Account &#8594;</button>
+    </div>
+    <div id="lmsg"></div>
+  </div>
+</div>
+<div id="hero">
+  <div id="sky"></div>
+  <div id="stars-c"></div>
+  <div class="aurora a1"></div><div class="aurora a2"></div>
+  <div id="moon"></div>
+  <div id="meadow"></div>
+  <div id="hc">
+    <div id="hlogo">
+      <svg id="hlogosvg" width="60" height="60" viewBox="0 0 60 60">
+        <defs><linearGradient id="glg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#c4b5fd"/><stop offset="50%" style="stop-color:#ec4899"/><stop offset="100%" style="stop-color:#06b6d4"/></linearGradient></defs>
+        <polygon points="30,3 56,18 56,42 30,57 4,42 4,18" fill="none" stroke="url(#glg)" stroke-width="2.5"/>
+        <polygon points="30,11 48,22 48,38 30,49 12,38 12,22" fill="rgba(139,92,246,0.18)" stroke="url(#glg)" stroke-width="1"/>
+        <text x="30" y="36" font-family="Orbitron,sans-serif" font-size="13" font-weight="900" fill="url(#glg)" text-anchor="middle">KN</text>
+      </svg>
+      <div id="hlogotxt">K-NEXUS</div>
+    </div>
+    <div id="htag">Dundee&#39;s Community Sanctuary Hub</div>
+    <div id="hsub">27 spaces. Three worlds. One place where neurodivergent people, veterans, families, and young people belong, create, heal, and thrive &#8212; completely free to join.</div>
+    <div id="hbadge">&#10022; Dundee, Scotland &#183; CIC SC881084 &#183; Est. 2026 &#10022;</div>
+    <div id="hbtns">
+      <button class="hbtn p" onclick="openModal('join')">Join the Community &#8212; It&#39;s Free</button>
+      <button class="hbtn o" onclick="document.querySelector('#rooms').scrollIntoView({behavior:'smooth'})">Explore the 27 Spaces</button>
+    </div>
+  </div>
+  <div id="scrolld" onclick="document.querySelector('#statsbar').scrollIntoView({behavior:'smooth'})">&#8595;</div>
+</div>
+<div id="statsbar">
+  <div class="stat"><div class="sn">27</div><div class="sl">Spaces</div></div>
+  <div class="stat"><div class="sn">50+</div><div class="sl">Staff</div></div>
+  <div class="stat"><div class="sn">FREE</div><div class="sl">Basic Access</div></div>
+  <div class="stat"><div class="sn">16+</div><div class="sl">Entry Age</div></div>
+  <div class="stat"><div class="sn">NHS</div><div class="sl">Linked</div></div>
+  <div class="stat"><div class="sn">&#8734;</div><div class="sl">Impact</div></div>
+</div>
+<div id="about" class="sec" style="background:var(--bg)">
+  <div class="sinner">
+    <div class="stit">What is K-NEXUS?</div>
+    <div class="ssub">Not a centre. Not a charity box. Not clinical. A sanctuary &#8212; built by someone who&#39;s been failed by the system, for everyone who has been too.</div>
+    <div class="grid3" id="about-grid"></div>
+  </div>
+</div>
+<div id="membership" class="sec" style="background:linear-gradient(180deg,var(--bg),#0a0020)">
+  <div class="sinner">
+    <div class="stit">Membership</div>
+    <div class="ssub">K-NEXUS is always free to access. Tiers unlock perks, treats, and experiences &#8212; never basic access. The community comes first.</div>
+    <div class="grid4" id="mem-grid"></div>
+  </div>
+</div>
+<div id="rooms" class="sec" style="background:var(--bg2)">
+  <div class="sinner">
+    <div class="stit">Our 27 Spaces</div>
+    <div class="ssub">Click any space to explore. Each one has its own vibe, soundtrack, and purpose. No clinical labels &#8212; just real spaces for real people.</div>
+    <div class="grid4" id="rooms-grid"></div>
+  </div>
+</div>
+<div id="nexus4" class="sec" style="background:var(--bg)">
+  <div class="sinner">
+    <div class="n4hero">
+      <div class="n4logo">NEXUS 4</div>
+      <div class="n4tag">The K-NEXUS Social Feed &#8212; No Algorithm. No Shadow Banning. No Ads.</div>
+      <div class="n4desc">See what you want to see. Your friends, your community, real creators. Companies can sell. People can post. No one gets buried. No one gets censored for being real.</div>
+      <div class="n4pills">
+        <div class="n4pill g">&#10003; Chronological feed</div>
+        <div class="n4pill g">&#10003; No shadow banning</div>
+        <div class="n4pill g">&#10003; Friends &amp; community only</div>
+        <div class="n4pill g">&#10003; Creator marketplace</div>
+        <div class="n4pill b">&#10007; No algorithm</div>
+        <div class="n4pill b">&#10007; No ads</div>
+        <div class="n4pill b">&#10007; No data selling</div>
+      </div>
+      <button class="n4btn" onclick="openModal('join')">Join Nexus 4 &#8594;</button>
+    </div>
+    <div class="n4feed" id="n4feed"></div>
+  </div>
+</div>
+<div id="merch" class="sec" style="background:var(--bg2)">
+  <div class="sinner">
+    <div class="stit">K-NEXUS Merch</div>
+    <div class="ssub">Rep the hub. Every purchase goes back into the community.</div>
+    <div class="grid4" id="merch-grid"></div>
+  </div>
+</div>
+<div id="daytrips" class="sec" style="background:var(--bg)">
+  <div class="sinner">
+    <div class="stit">Day Trips</div>
+    <div class="ssub">Organised days out for members. Fully supported, accessible, and affordable. Book at any till point in the hub.</div>
+    <div class="grid3" id="trips-grid"></div>
+  </div>
+</div>
+<section id="suppliers"><div class="sinner"><div class="stit">Equipment &amp; Suppliers Found</div><div class="ssub">Live supplier results sourced by Rift AI.</div><div class="sup-grid"><div class="sup-card"><h3>Arcade Machines Uk</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div><div class="sup-card"><h3>Arcade Machines Japan</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div><div class="sup-card"><h3>Gaming Peripherals</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div><div class="sup-card"><h3>Vr Headsets</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div><div class="sup-card"><h3>Vending Machines Uk</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div><div class="sup-card"><h3>Vending Machines Japan</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div><div class="sup-card"><h3>Sensory Equipment</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div><div class="sup-card"><h3>Hydrotherapy</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div><div class="sup-card"><h3>Gaming Chairs</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div><div class="sup-card"><h3>Stem Equipment</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div><div class="sup-card"><h3>Animation Equipment</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div><div class="sup-card"><h3>Music Studio</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div><div class="sup-card"><h3>Streaming Equipment</h3><ul><li class="muted">Search UK suppliers via the Rift Search tab</li></ul></div></div></div></section>
+<div id="subbrands" class="sec" style="background:linear-gradient(180deg,var(--bg2),var(--bg))">
+  <div class="sinner">
+    <div class="stit">The K-NEXUS Ecosystem</div>
+    <div class="ssub">Four pillars. One roof. Built for Dundee.</div>
+    <div class="grid4" id="subbrands-grid">
+      <div class="mcard"><div style="font-size:2rem;margin-bottom:10px">🏥</div><div style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;color:#06b6d4;margin-bottom:8px">NEXUS CARE</div><div style="color:#7070a0;font-size:.9rem;line-height:1.7">NHS Social Prescribing integration. GP referral pathway direct into K-NEXUS wellbeing services. No waiting lists. Walk-in and referred.</div></div>
+      <div class="mcard"><div style="font-size:2rem;margin-bottom:10px">🌊</div><div style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;color:#ec4899;margin-bottom:8px">NEXUS WAVE</div><div style="color:#7070a0;font-size:.9rem;line-height:1.7">Events and live experiences brand. Community shows, open mic nights, expos, conventions. K-NEXUS Live is coming.</div></div>
+      <div class="mcard"><div style="font-size:2rem;margin-bottom:10px">📡</div><div style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;color:#8b5cf6;margin-bottom:8px">NEXUS PULSE</div><div style="color:#7070a0;font-size:.9rem;line-height:1.7">Safety and RFID infrastructure. Member access control, real-time tracking, missing-person alert protocol. Every door. Every card. Always watching.</div></div>
+      <div class="mcard"><div style="font-size:2rem;margin-bottom:10px">🔒</div><div style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;color:#f97316;margin-bottom:8px">NEXUS VAULT</div><div style="color:#7070a0;font-size:.9rem;line-height:1.7">Stock management, inventory, lending library, vending, and asset tracking. Every item accounted for. Powered by Rift AI.</div></div>
+    </div>
+    <div style="margin-top:40px;background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.3);border-radius:18px;padding:28px;text-align:center">
+      <div style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;color:#06b6d4;margin-bottom:8px">NEXUS SCOUTS — AGES 9 TO 99</div>
+      <div style="color:#7070a0;font-size:.9rem;line-height:1.7;max-width:600px;margin:0 auto">Activity-based community badge programme. No upper age limit. No judgment. Covering creativity, digital skills, community service, sport, and wellbeing. Badges potentially converting to SQA qualifications.</div>
+    </div>
+  </div>
+</div>
+<div id="logos" class="sec" style="background:var(--bg2)">
+  <div class="sinner">
+    <div class="stit">K-NEXUS Logo Concepts</div>
+    <div class="ssub">Four directions for the brand identity. Purple, pink, cyan palette.</div>
+    <div class="grid4" id="logos-grid"></div>
+  </div>
+</div>
+<div id="nexusflow" class="sec" style="background:linear-gradient(180deg,var(--bg2),var(--bg))">
+  <div class="sinner">
+    <div class="stit">🌊 Nexus Flow</div>
+    <div class="ssub">Your community voice. Share your K-NEXUS journey — creative projects, achievements, events and moments. Connect with the community across social media and beyond.</div>
+    <div class="grid3" id="flow-grid"></div>
+    <div style="margin-top:40px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.3);border-radius:18px;padding:32px;text-align:center">
+      <div style="font-family:'Orbitron',sans-serif;font-size:1.2rem;font-weight:900;color:#c4b5fd;margin-bottom:10px">JOIN THE CONVERSATION</div>
+      <div style="color:#7070a0;font-size:.95rem;margin-bottom:20px">Follow K-NEXUS on social media for updates, events, and community stories.</div>
+      <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+        <a href="https://facebook.com/knexusdundee" target="_blank" style="background:rgba(59,130,246,.15);border:1px solid #3b82f6;color:#93c5fd;padding:10px 22px;border-radius:50px;font-weight:700;font-size:.9rem;transition:all .3s">📘 Facebook</a>
+        <a href="https://instagram.com/knexusdundee" target="_blank" style="background:rgba(236,72,153,.12);border:1px solid #ec4899;color:#f9a8d4;padding:10px 22px;border-radius:50px;font-weight:700;font-size:.9rem">📸 Instagram</a>
+        <a href="https://tiktok.com/@knexusdundee" target="_blank" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);color:#f0f0ff;padding:10px 22px;border-radius:50px;font-weight:700;font-size:.9rem">🎵 TikTok</a>
+        <a href="https://youtube.com/@knexusdundee" target="_blank" style="background:rgba(239,68,68,.12);border:1px solid #ef4444;color:#fca5a5;padding:10px 22px;border-radius:50px;font-weight:700;font-size:.9rem">▶ YouTube</a>
+        <a href="https://x.com/knexusdundee" target="_blank" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);color:#f0f0ff;padding:10px 22px;border-radius:50px;font-weight:700;font-size:.9rem">𝕏 Twitter/X</a>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="contact" class="sec" style="background:var(--bg)">
+  <div class="sinner">
+    <div class="stit">Get in Touch</div>
+    <div class="ssub">Based in Dundee. Real people. Real answers.</div>
+    <div class="grid4" id="contact-grid"></div>
+  </div>
+</div>
+<footer>
+  <div id="flogo">K&#10022;NEXUS</div>
+  <p>K-NEXUS Dundee CIC &middot; Community Interest Company Limited by Guarantee</p>
+  <p>Company No. SC881084 &middot; Dundee, Scotland &middot; director@k-nexus.co.uk</p>
+  <p style="margin-top:14px;color:#2a2a4a;font-size:.77rem">Protected by Rift AI NexusShield &middot; GDPR Compliant &middot; All rights reserved 2026</p>
+</footer>
+<div id="riftb">
+  <div id="riftchat">
+    <div id="rchead"><span>🤖</span><span>RIFT — K-NEXUS AI</span><span style="margin-left:auto;font-size:.7rem;opacity:.7">Always here</span></div>
+    <div id="rcmsgs"><div class="rm ai">Hey! I'm Rift. Ask me about membership, rooms, day trips, or how to join! Type anything below ↓</div></div>
+    <div id="rcirow">
+      <input id="rcin" placeholder="Ask Rift anything…" onkeydown="if(event.key==='Enter'){event.preventDefault();sr();}">
+      <button id="rcsend" type="button" onclick="sr()" title="Send">SEND</button>
+    </div>
+  </div>
+  <button id="riftbtn" onclick="document.getElementById('riftchat').classList.toggle('open')">&#129302;</button>
+</div>
+<script>
+const ROOMS=[
+  {n:1,e:"&#9749;",t:"tc",nm:"Main Caf&eacute; &amp; Social Space",vibe:"Warm &amp; Welcoming",music:"Tin Top Lo-Fi Mix",desc:"The beating heart of K-NEXUS. Award-winning Tin Top coffee, hot food, pizza, and space to just exist. No timer. No pressure.",cap:"80",ac:"Free / All members",bk:"Walk in",area:"Caf&eacute; &amp; Social"},
+  {n:2,e:"&#127859;",t:"tk",nm:"Commercial Kitchen",vibe:"Productive",music:"Focus Playlist",desc:"Full commercial kitchen. Community cooking events, training, and catering. Bookable for workshops.",cap:"12",ac:"Booked access",bk:"Book ahead",area:"Caf&eacute; &amp; Social"},
+  {n:3,e:"&#127807;",t:"tc",nm:"Accessible Dining",vibe:"Calm &amp; Sensory-Friendly",music:"Gentle Ambient",desc:"Quieter, lower-stimulation dining space. Reduced lighting, soft acoustics. For members who need a calmer environment.",cap:"30",ac:"Free / All members",bk:"Walk in",area:"Caf&eacute; &amp; Social"},
+  {n:4,e:"&#128377;",t:"ta",nm:"Arcade Hall",vibe:"High Energy / Electric",music:"Tokyo Funk",desc:"Full arcade floor &#8212; classic machines, fighting sticks, pinball, prize wall, plushie machines. The kind of place you lose track of time.",cap:"60",ac:"Members",bk:"Walk in",area:"Experience"},
+  {n:5,e:"&#129405;",t:"tv",nm:"VR Experience Suite",vibe:"Fully Immersive",music:"Ambient Electronic",desc:"Full VR rig suite. Explore virtual worlds, rehab environments, educational adventures. All ability levels welcome.",cap:"12",ac:"Members",bk:"Book a slot",area:"Experience"},
+  {n:6,e:"&#127912;",t:"tan",nm:"Creation Lab",vibe:"Creative &amp; Expressive",music:"Anime OST Chill Mix",desc:"Anime drawing, storyboarding, prop-making, cosplay, digital art. Built for beginners and serious creators alike.",cap:"20",ac:"Members",bk:"Walk in / Workshop",area:"Experience"},
+  {n:7,e:"&#127919;",t:"tg",nm:"Gaming &amp; Events Space",vibe:"Epic Scale",music:"Epic Orchestral Gaming",desc:"Large flexible floor for conventions, tournaments, expos, community events. Regular nights open to all members.",cap:"100",ac:"Events / Members",bk:"Events calendar",area:"Experience"},
+  {n:8,e:"&#128300;",t:"ts",nm:"STEM Lab &amp; Viewing",vibe:"Curious &amp; Focused",music:"Focus Beats",desc:"Robotics, coding, science. Viewing gallery above. School and community groups welcome.",cap:"24",ac:"Members / Education",bk:"Walk in / Book",area:"Learning"},
+  {n:9,e:"&#127925;",t:"tm",nm:"Music &amp; Drama Studio",vibe:"Electric &amp; Creative",music:"Studio Monitor Mix",desc:"Full recording studio with soundproof booths, mixing desk, instruments, performance space. Open mic nights available.",cap:"30",ac:"Members",bk:"Book a slot",area:"Creative"},
+  {n:10,e:"&#127916;",t:"tan",nm:"Animation Studio",vibe:"Professional Creative",music:"Anime Chill Beats",desc:"Professional animation workstations, rendering, editing suites. Industry-grade tools at community prices.",cap:"16",ac:"Members",bk:"Book a slot",area:"Creative"},
+  {n:11,e:"&#128225;",t:"tst",nm:"Streaming Room",vibe:"Live &amp; On-Air",music:"Stream Intro Beats",desc:"Green screen, ring lights, capture cards, ultra-fast fibre. Stream gaming, events, or content live.",cap:"6",ac:"Members",bk:"Book a slot",area:"Creative"},
+  {n:12,e:"&#127942;",t:"te",nm:"E-Sports Suite",vibe:"Competitive",music:"E-Sports Anthems",desc:"High-refresh monitors, low-latency setups, gaming chairs. Disability-adapted controls available.",cap:"20",ac:"Members",bk:"Walk in / Events",area:"Experience"},
+  {n:13,e:"&#128296;",t:"ts",nm:"Creative Workshop",vibe:"Maker Space",music:"Indie Workshop Vibes",desc:"Crafts, textiles, woodwork, electronics, DIY. Inclusive maker space. Free materials for members.",cap:"18",ac:"Members",bk:"Walk in / Workshop",area:"Creative"},
+  {n:14,e:"&#127800;",t:"tcl",nm:"Welcome &amp; Recovery Hub",vibe:"Calm &amp; Open",music:"Soft Ambient",desc:"Entry point to K-NEXUS wellbeing. Warm, relaxed space for first conversations and signposting. No referral needed.",cap:"10",ac:"Open to all",bk:"Walk in",area:"Wellbeing"},
+  {n:15,e:"&#128156;",t:"tth",nm:"Talking Space A",vibe:"Safe &amp; Private",music:"White Noise",desc:"Private one-to-one support room. Sound-insulated, calming, sensory-neutral. For counselling and supported conversations.",cap:"3",ac:"Referral / Appointment",bk:"By appointment",area:"Wellbeing"},
+  {n:16,e:"&#128153;",t:"tth",nm:"Talking Space B",vibe:"Safe &amp; Private",music:"White Noise",desc:"Second private support room. Same spec as Space A &#8212; ensures no waiting when demand is high.",cap:"3",ac:"Referral / Appointment",bk:"By appointment",area:"Wellbeing"},
+  {n:17,e:"&#129309;",t:"tth",nm:"Group Support Space",vibe:"Communal &amp; Accepting",music:"Soft Background",desc:"Group therapy, peer circles, recovery groups, community connection. No judgment, no agenda beyond connection.",cap:"20",ac:"Referral / Open groups",bk:"Session calendar",area:"Wellbeing"},
+  {n:18,e:"&#128167;",t:"tcl",nm:"Hydrotherapy Suite",vibe:"Healing &amp; Calm",music:"Water &amp; Nature",desc:"Specialist hydrotherapy for physical rehabilitation, brain injury recovery, chronic pain, sensory regulation.",cap:"6",ac:"Clinical referral",bk:"Clinician only",area:"Rehabilitation"},
+  {n:19,e:"&#127752;",t:"tne",nm:"Sensory Space",vibe:"Sensory-Friendly",music:"Fully Adjustable",desc:"Bubble tubes, fibre optics, weighted items, adjustable lighting and sound. For decompression and sensory regulation.",cap:"4",ac:"Members / Referral",bk:"Walk in / Book",area:"Wellbeing"},
+  {n:20,e:"&#129514;",t:"tcl",nm:"Clinical Assessment Room",vibe:"Professional",music:"None",desc:"Clinical-grade assessment space for visiting NHS clinicians, OTs, and specialists.",cap:"4",ac:"Clinical appointment",bk:"By appointment",area:"Clinical"},
+  {n:21,e:"&#129516;",t:"tcl",nm:"GP &amp; Specialist Liaison",vibe:"Professional",music:"None",desc:"GP liaison, psychiatric consultations, specialist appointments. Connected to NHS Tayside referral pathways.",cap:"4",ac:"Clinical appointment",bk:"By appointment",area:"Clinical"},
+  {n:22,e:"&#127894;",t:"tvt",nm:"Veterans Support Suite",vibe:"Respectful &amp; Safe",music:"Quiet Ambient",desc:"Built for armed forces veterans and families. Peer support, structured sessions. Walk in anytime.",cap:"12",ac:"Veterans / Open",bk:"Walk in / Sessions",area:"Veterans"},
+  {n:23,e:"&#9889;",t:"tne",nm:"Neurodivergent Space",vibe:"Authentic &amp; Accepting",music:"Customisable",desc:"For ADHD, autism, dyslexia, dyspraxia. No masking. Sensory tools, focus aids, community who get it.",cap:"15",ac:"Members",bk:"Walk in",area:"Wellbeing"},
+  {n:24,e:"&#129504;",t:"tcl",nm:"Brain Injury Rehabilitation",vibe:"Focused Recovery",music:"Therapeutic",desc:"Specialist rehab for acquired and traumatic brain injury. OT, speech and language, cognitive rehab, creative therapies.",cap:"8",ac:"Clinical referral",bk:"Clinician only",area:"Rehabilitation"},
+  {n:25,e:"&#128218;",t:"ts",nm:"Learning &amp; Digital Hub",vibe:"Focused Growth",music:"Lo-Fi Study",desc:"Quiet study and digital access. Computers, lending library tablets, printing, supported digital skills. Free internet.",cap:"20",ac:"Members",bk:"Walk in",area:"Learning"},
+  {n:26,e:"&#128101;",t:"tad",nm:"Staff &amp; Welfare Suite",vibe:"Staff Only",music:"Staff Choice",desc:"Private rest, welfare, and briefing space for K-NEXUS staff.",cap:"20",ac:"Staff only",bk:"N/A",area:"Operational"},
+  {n:27,e:"&#127970;",t:"tad",nm:"Director &amp; Admin Hub",vibe:"Operational",music:"Background Focus",desc:"Director office, admin systems, GDPR-secure data room. Full Rift AI management and CCTV oversight.",cap:"6",ac:"Staff only",bk:"N/A",area:"Operational"},
+];
+const MEMS=[
+  {nm:"Community Free",pr:"Free",pe:"",bc:"#22c55e",badge:"COMMUNITY",desc:"Walk in. Use the spaces. No card needed. K-NEXUS is always free to access.",perks:["Full hub public access","Caf&eacute; (pay as you go)","Nexus 4 social feed","Events calendar","Device lending library","RFID card on request"],btn:"Get Your Free Card",bs:"o"},
+  {nm:"Explorer",pr:"&pound;10",pe:"/mo",bc:"#8b5cf6",badge:"EXPLORER",desc:"Keep the hub running. Get something back every month.",perks:["Everything in Free","1 free Tin Top coffee/month","Priority event booking","10% caf&eacute; discount","Workshop access","Monthly member perks"],btn:"Join Explorer",bs:"s"},
+  {nm:"Sanctuary",pr:"&pound;25",pe:"/mo",bc:"#ec4899",badge:"SANCTUARY",feat:true,desc:"Pamper days, priority access, proper appreciation every 6 months.",perks:["Everything in Explorer","Pamper Day every 6 months","Haircut at K-NEXUS (partner)","3 free coffees/month","15% caf&eacute; discount","All spaces priority booking","1 guest pass/month"],btn:"Join Sanctuary",bs:"s"},
+  {nm:"Platinum",pr:"&pound;50",pe:"/mo",bc:"#f97316",badge:"PLATINUM",desc:"Full day every 6 months &#8212; choose anything. VIP every visit.",perks:["Everything in Sanctuary","Full Free Day every 6 months","Choose any activity that day","20% discount all services","Unlimited guest passes","Name on Members Wall","Annual K-NEXUS gift"],btn:"Join Platinum",bs:"s"},
+  {nm:"Family Free",pr:"Free",pe:"",bc:"#06b6d4",badge:"FAMILY",desc:"The whole family carded and registered. Age-gated access automatic.",perks:["Up to 8 RFID cards/fobs","All family members registered","Age-appropriate access enforced","Full hub public access","Family events access"],btn:"Get Family Cards",bs:"o"},
+  {nm:"Family Plus",pr:"&pound;20",pe:"/mo",bc:"#8b5cf6",badge:"FAMILY+",desc:"Perks for the whole squad. Worth it from the very first visit.",perks:["Everything in Family Free","2 free coffees/month","10% family discount","Quarterly family events","Workshop priority booking"],btn:"Join Family+",bs:"s"},
+  {nm:"Family Sanctuary",pr:"&pound;40",pe:"/mo",bc:"#ec4899",badge:"FAM SANCTUARY",feat:true,desc:"The full experience for the whole family.",perks:["Everything in Family Plus","Family Pamper Day every 6 months","1 Full Free Day every 6 months","5 free coffees/month","20% discount all services","Birthday treat each member"],btn:"Join Family Sanctuary",bs:"s"},
+];
+const N4P=[
+  {av:"&#127918;",u:"Jamie M.",tag:"Gaming",t:"2 mins ago",b:"Just hit diamond in the K-NEXUS e-sports league. Room 12 setup is genuinely next level &#128293;"},
+  {av:"&#127912;",u:"Sarah K.",tag:"Creative",t:"14 mins ago",b:"Finished my first full manga page in the Creation Lab. 3 months ago I couldn&#39;t draw a stick man. This place actually changed my life."},
+  {av:"&#9749;",u:"K-NEXUS Caf&eacute;",tag:"Caf&eacute;",t:"1 hr ago",b:"Fresh Tin Top Colombian blend just in. Come down &#9749;"},
+  {av:"&#127894;",u:"Vets Group",tag:"Veterans",t:"3 hrs ago",b:"Monthly peer support session in Room 22 was packed. If you served and you&#39;re struggling &#8212; we&#39;re here. No referral needed."},
+  {av:"&#9889;",u:"Neuro Crew",tag:"Neurodivergent",t:"5 hrs ago",b:"Sensory space (Room 19) is properly magical when you&#39;ve had one of those days. No questions. No judgment."},
+  {av:"&#127925;",u:"Studio Session",tag:"Music",t:"8 hrs ago",b:"Recording went til midnight. The kit in Room 9 is professional grade. K-NEXUS live events coming very soon &#127908;"},
+];
+const MERCH=[
+  {nm:"K-NEXUS Hoodie",e:"&#128085;",pr:"&pound;35",bg:"mb1",d:"Premium heavyweight hoodie. Embroidered logo."},
+  {nm:"Nexus 4 Launch Tee",e:"&#128085;",pr:"&pound;22",bg:"mb2",d:"Limited edition Nexus 4 tee. First 100 only."},
+  {nm:"RIFT AI Mug",e:"&#9749;",pr:"&pound;14",bg:"mb3",d:'"I'm always watching." &#8212; RIFT AI. 400ml ceramic.'},
+  {nm:"K-NEXUS Cap",e:"&#129410;",pr:"&pound;20",bg:"mb4",d:"Embroidered K-NEXUS logo cap. One size."},
+  {nm:"Creation Lab Prints",e:"&#127912;",pr:"&pound;18",bg:"mb1",d:"A3 prints by K-NEXUS creators. Limited signed run."},
+  {nm:"K-NEXUS Tote",e:"&#128717;",pr:"&pound;12",bg:"mb2",d:"Heavy canvas tote. Community-designed print."},
+  {nm:"Sticker Pack",e:"&#10024;",pr:"&pound;6",bg:"mb3",d:"10 premium vinyl stickers. Full K-NEXUS collection."},
+  {nm:"RFID Gift Card",e:"&#127873;",pr:"From &pound;10",bg:"mb4",d:"Preloaded RFID gift card. Perfect for new members."},
+];
+const TRIPS=[
+  {nm:"Edinburgh Day Out",e:"&#127984;",ic:"ti1",d:"Castle, Royal Mile, street food. Accessible transport. Supported for all needs.",pr:"From &pound;15",age:"16+"},
+  {nm:"Highlands Adventure",e:"&#127956;",ic:"ti2",d:"Coach day to the Cairngorms. Scenic walk, lunch, stunning views. Sensory-friendly.",pr:"From &pound;25",age:"16+"},
+  {nm:"Glasgow Culture Day",e:"&#127917;",ic:"ti3",d:"Kelvingrove Gallery, street food, the city. Own pace, own choices.",pr:"From &pound;12",age:"16+"},
+  {nm:"Broughty Ferry Beach",e:"&#127754;",ic:"ti1",d:"Beach day. Fish and chips, paddling, crabbing. Short accessible journey from the hub.",pr:"From &pound;8",age:"All ages"},
+  {nm:"Highland Wildlife Safari",e:"&#129420;",ic:"ti2",d:"Highland Wildlife Park &#8212; wolves, bison, red squirrels, snow leopards. Fully accessible.",pr:"From &pound;20",age:"All ages"},
+  {nm:"Dundee Night Out",e:"&#127750;",ic:"ti4",d:"Bowling, cinema, food, or city lights. Evening trip. 18+ option for licensed venues.",pr:"From &pound;10",age:"16+ / 18+"},
+];
+const LOGOS=[
+  {nm:"Hexagon Core",d:"Bold geometry. Purple-to-pink gradient.",svg:'<svg viewBox="0 0 180 180"><defs><linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#c4b5fd"/><stop offset="100%" style="stop-color:#ec4899"/></linearGradient></defs><polygon points="90,8 164,50 164,130 90,172 16,130 16,50" fill="none" stroke="url(#lg2)" stroke-width="5"/><polygon points="90,24 148,58 148,122 90,156 32,122 32,58" fill="rgba(139,92,246,0.15)" stroke="url(#lg2)" stroke-width="1.5"/><text x="90" y="100" font-family="Orbitron,sans-serif" font-size="26" font-weight="900" fill="url(#lg2)" text-anchor="middle">KN</text></svg>'},
+  {nm:"Nexus Node",d:"Connected community nodes. Cyan-to-purple.",svg:'<svg viewBox="0 0 180 180"><defs><linearGradient id="lg3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#06b6d4"/><stop offset="100%" style="stop-color:#8b5cf6"/></linearGradient></defs><circle cx="90" cy="90" r="18" fill="url(#lg3)"/><circle cx="40" cy="50" r="11" fill="none" stroke="url(#lg3)" stroke-width="2.5"/><circle cx="140" cy="50" r="11" fill="none" stroke="url(#lg3)" stroke-width="2.5"/><circle cx="40" cy="130" r="11" fill="none" stroke="url(#lg3)" stroke-width="2.5"/><circle cx="140" cy="130" r="11" fill="none" stroke="url(#lg3)" stroke-width="2.5"/><line x1="72" y1="78" x2="51" y2="59" stroke="url(#lg3)" stroke-width="1.5"/><line x1="108" y1="78" x2="129" y2="59" stroke="url(#lg3)" stroke-width="1.5"/><line x1="72" y1="102" x2="51" y2="121" stroke="url(#lg3)" stroke-width="1.5"/><line x1="108" y1="102" x2="129" y2="121" stroke="url(#lg3)" stroke-width="1.5"/><text x="90" y="96" font-family="Orbitron,sans-serif" font-size="11" font-weight="900" fill="#fff" text-anchor="middle">KN</text></svg>'},
+  {nm:"Rising Star",d:"Upward energy. Community rising together.",svg:'<svg viewBox="0 0 180 180"><defs><linearGradient id="lg4" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#f97316"/><stop offset="100%" style="stop-color:#ec4899"/></linearGradient></defs><circle cx="90" cy="90" r="78" fill="none" stroke="url(#lg4)" stroke-width="3.5"/><polygon points="90,24 104,72 154,72 114,102 128,150 90,120 52,150 66,102 26,72 76,72" fill="none" stroke="url(#lg4)" stroke-width="2.5"/></svg>'},
+  {nm:"Clean Wordmark",d:"Orbitron type with gradient. Works any size.",svg:'<svg viewBox="0 0 260 90"><defs><linearGradient id="lg5" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#c4b5fd"/><stop offset="50%" style="stop-color:#ec4899"/><stop offset="100%" style="stop-color:#06b6d4"/></linearGradient></defs><text x="8" y="58" font-family="Orbitron,sans-serif" font-size="40" font-weight="900" fill="url(#lg5)">K-NEXUS</text><line x1="8" y1="68" x2="252" y2="68" stroke="url(#lg5)" stroke-width="2"/><text x="8" y="83" font-family="sans-serif" font-size="10" fill="#7070a0" letter-spacing="5">DUNDEE CIC</text></svg>'},
+];
+function rAbout(){
+  const items=[
+    {i:"&#129504;",n:"Neurodivergent-First Design",t:"Every space designed with sensory, cognitive, and accessibility needs at the core. Not bolted on."},
+    {i:"&#127894;",n:"Veterans Suite",t:"Dedicated support for armed forces veterans and families. Safe, structured, built with respect."},
+    {i:"&#129516;",n:"Brain Injury Rehab",t:"Specialist rehab across hydrotherapy, sensory, clinical, and creative spaces &#8212; all under one roof."},
+    {i:"&#127918;",n:"Experience &amp; Creation",t:"VR worlds, anime lab, STEM, music studio, e-sports, arcade &#8212; possibility for every age and ability."},
+    {i:"&#9749;",n:"Tin Top Caf&eacute;",t:"Hot food, award-winning coffee, pizza, and space to just be. No timer. No pressure."},
+    {i:"&#128241;",n:"Lending Library",t:"Tablets and internet devices for low-income members. Because access is a right."},
+  ];
+  document.getElementById('about-grid').innerHTML=items.map(a=>`<div class="acrd"><div class="aico">${a.i}</div><div class="atn">${a.n}</div><div class="att">${a.t}</div></div>`).join('');
+}
+function rMem(){
+  document.getElementById('mem-grid').innerHTML=MEMS.map(m=>`
+    <div class="mcard${m.feat?' feat':''}">
+      ${m.feat?'<div class="pop-tag">POPULAR</div>':''}
+      <div class="mbadge" style="color:${m.bc};border-color:${m.bc}">${m.badge}</div>
+      <div class="mprice">${m.pr}<span>${m.pe}</span></div>
+      <div class="mname">${m.nm}</div>
+      <div class="mdesc">${m.desc}</div>
+      <ul class="mperks">${m.perks.map(p=>`<li>${p}</li>`).join('')}</ul>
+      <button class="mbtn ${m.bs}" onclick="openModal('join')">${m.btn}</button>
+    </div>`).join('');
+}
+function rRooms(){
+  document.getElementById('rooms-grid').innerHTML=ROOMS.map((r,i)=>`
+    <div class="rcard" style="position:relative">
+      <a href="room-${r.n}.html" style="position:absolute;inset:0;z-index:2;border-radius:inherit" title="Open ${r.nm} page"></a>
+      <div class="rimg ${r.t}">${r.e}</div>
+      <div class="rinfo">
+        <div class="rno">R${String(r.n).padStart(2,'0')}</div>
+        <div class="rn">${r.nm}</div>
+        <div class="rtag">&#9835; ${r.music}</div>
+        <div style="margin-top:8px;font-size:.72rem;color:#8b5cf6;font-weight:700">View full page →</div>
+      </div>
+    </div>`).join('');
+}
+let _rm=null;
+function openR(i){
+  _rm=i;const r=ROOMS[i];
+  const GRAD={tc:'#78350f,#451a03',tk:'#7f1d1d,#450a0a',ta:'#1e1b4b,#312e81',tv:'#064e3b,#065f46',tan:'#831843,#9d174d',tg:'#1e3a5f,#1e40af',ts:'#14532d,#166534',tm:'#581c87,#7e22ce',te:'#0c4a6e,#0369a1',tcl:'#1e3a3a,#134e4a',tth:'#2e1065,#3b0764',tvt:'#1c1917,#292524',tne:'#14532d,#052e16',tst:'#4c0519,#881337',tad:'#1e1b4b,#1e1b4b'};
+  const g=GRAD[r.t]||'#1a1a3a,#0a0a1a';
+  document.getElementById('rmodal').innerHTML=`
+    <div style="position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.remove()">
+      <div style="background:linear-gradient(135deg,#1a1a3a,#0f0f25);border:1px solid #8b5cf6;border-radius:22px;width:100%;max-width:600px;overflow:hidden;max-height:88vh;overflow-y:auto;animation:popin .3s cubic-bezier(.34,1.56,.64,1)">
+        <div style="height:190px;display:flex;align-items:center;justify-content:center;font-size:4.5rem;position:relative;background:linear-gradient(135deg,${g})">
+          <button onclick="document.getElementById('rmodal').innerHTML=''" style="position:absolute;top:10px;right:14px;background:rgba(0,0,0,.5);border:none;color:#fff;font-size:1.3rem;cursor:pointer;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center">&#10005;</button>
+          ${r.e}
+        </div>
+        <div style="padding:26px">
+          <div style="font-size:.72rem;color:#c4b5fd;font-weight:700;letter-spacing:2px;margin-bottom:3px">R${String(r.n).padStart(2,'0')}</div>
+          <div style="font-family:Orbitron,sans-serif;font-size:1.3rem;font-weight:900;margin-bottom:10px">${r.nm}</div>
+          <div style="display:inline-block;background:rgba(139,92,246,.18);border:1px solid #8b5cf6;border-radius:100px;padding:3px 13px;font-size:.78rem;color:#c4b5fd;margin-bottom:14px">&#10022; ${r.vibe}</div>
+          <div style="color:#7070a0;line-height:1.8;margin-bottom:18px;font-size:.93rem">${r.desc}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+            <div style="background:rgba(255,255,255,.05);border-radius:10px;padding:11px"><div style="color:#c4b5fd;font-weight:700;font-size:.72rem;letter-spacing:1px;margin-bottom:3px">CAPACITY</div>${r.cap}</div>
+            <div style="background:rgba(255,255,255,.05);border-radius:10px;padding:11px"><div style="color:#c4b5fd;font-weight:700;font-size:.72rem;letter-spacing:1px;margin-bottom:3px">ACCESS</div>${r.ac}</div>
+            <div style="background:rgba(255,255,255,.05);border-radius:10px;padding:11px"><div style="color:#c4b5fd;font-weight:700;font-size:.72rem;letter-spacing:1px;margin-bottom:3px">BOOKING</div>${r.bk}</div>
+            <div style="background:rgba(255,255,255,.05);border-radius:10px;padding:11px"><div style="color:#c4b5fd;font-weight:700;font-size:.72rem;letter-spacing:1px;margin-bottom:3px">AREA</div>${r.area}</div>
+          </div>
+          <div style="padding:11px 14px;border-radius:10px;background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(236,72,153,.08));border:1px solid rgba(139,92,246,.25);display:flex;align-items:center;gap:10px">
+            <span style="font-size:1.3rem;animation:spin 4s linear infinite">&#127925;</span>
+            <div><div style="font-size:.7rem;color:#c4b5fd;font-weight:700">ROOM SOUNDTRACK</div><div style="font-size:.88rem">${r.music}</div></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+function rN4(){
+  document.getElementById('n4feed').innerHTML=N4P.map(p=>`
+    <div class="n4post">
+      <div class="n4ph"><div class="n4av">${p.av}</div><div><div class="n4u">${p.u}</div><div class="n4t">${p.t}</div><div class="n4tg">#${p.tag}</div></div></div>
+      <div class="n4pb">${p.b}</div>
+      <div class="n4pa">
+        <button class="n4a" onclick="this.style.color='#c4b5fd'">&#9829; Like</button>
+        <button class="n4a">&#128172; Reply</button>
+        <button class="n4a">&#8599; Share</button>
+      </div>
+    </div>`).join('');
+}
+function rMerch(){
+  document.getElementById('merch-grid').innerHTML=MERCH.map(m=>`
+    <div class="mcrd">
+      <div class="mci ${m.bg}">${m.e}</div>
+      <div class="mcinf"><div class="mcn">${m.nm}</div><div class="mcp">${m.pr}</div>
+      <button class="mcbtn" onclick="openModal('join')">Add to Cart</button></div>
+    </div>`).join('');
+}
+function rTrips(){
+  document.getElementById('trips-grid').innerHTML=TRIPS.map(t=>`
+    <div class="tcard">
+      <div class="timg ${t.ic}">${t.e}</div>
+      <div class="tinf"><div class="tn">${t.nm}</div><div class="td">${t.d}</div>
+      <div class="tmeta"><div class="tpr">${t.pr}</div><div class="tage">${t.age}</div></div>
+      <button class="tbtn" onclick="openModal('join')">Book This Trip</button></div>
+    </div>`).join('');
+}
+function rLogos(){
+  document.getElementById('logos-grid').innerHTML=LOGOS.map(l=>`
+    <div class="lcrd">${l.svg}<div class="lcn">${l.nm}</div><div class="lcd">${l.d}</div></div>`).join('');
+}
+function rContact(){
+  const items=[{i:"&#128205;",l:"Location",v:"Dundee, Scotland"},{i:"&#9993;",l:"Director",v:"director@k-nexus.co.uk"},{i:"&#127760;",l:"Website",v:"k-nexus.co.uk"},{i:"&#127962;",l:"Company",v:"K-NEXUS Dundee CIC<br><small style='color:#7070a0'>SC881084</small>"}];
+  document.getElementById('contact-grid').innerHTML=items.map(c=>`<div class="ccrd"><div class="cci">${c.i}</div><div class="ccl">${c.l}</div><div class="ccv">${c.v}</div></div>`).join('');
+}
+function buildScene(){
+  const sc=document.getElementById('stars-c');
+  for(let i=0;i<160;i++){const s=document.createElement('div');s.className='star';const sz=Math.random()*2.8+.8;s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*75}%;left:${Math.random()*100}%;--d:${2+Math.random()*4}s`;sc.appendChild(s);}
+  const m=document.getElementById('meadow');
+  for(let i=0;i<220;i++){const g=document.createElement('div');g.className='gblade';const h=18+Math.random()*55;g.style.cssText=`left:${Math.random()*100}%;height:${h}px;--sw:${2+Math.random()*3}s;--sd:${Math.random()*2}s`;m.appendChild(g);}
+  [{l:'14%',w:'48px',h:'76px',hs:'28px',hw:'30px',cc:'rgba(90,40,170,.75)',sd:'0s'},{l:'19%',w:'42px',h:'66px',hs:'24px',hw:'26px',cc:'rgba(170,40,90,.7)',sd:'.5s'},{l:'72%',w:'52px',h:'80px',hs:'30px',hw:'32px',cc:'rgba(40,80,170,.72)',sd:'1s'},{l:'77%',w:'40px',h:'62px',hs:'22px',hw:'24px',cc:'rgba(40,150,60,.68)',sd:'1.5s'}].forEach(c=>{const el=document.createElement('div');el.className='achar';el.style.cssText=`left:${c.l};--w:${c.w};--h:${c.h};--hs:${c.hs};--hw:${c.hw};--cc:${c.cc};--sd2:${c.sd}`;m.appendChild(el);});
+  for(let i=0;i<22;i++){const f=document.createElement('div');f.className='ff';f.style.cssText=`bottom:${45+Math.random()*130}px;left:${Math.random()*100}%;--fd:${4+Math.random()*4}s;--fsd:${Math.random()*5}s;--fx:${(Math.random()-.5)*110}px;--fy:-${25+Math.random()*80}px`;m.appendChild(f);}
+  const h=document.getElementById('hero');
+  for(let i=0;i<5;i++){const c=document.createElement('div');c.className='cloud-bg';c.style.cssText=`width:${200+Math.random()*280}px;height:${55+Math.random()*70}px;top:${8+Math.random()*38}%;animation-duration:${28+Math.random()*36}s;animation-delay:-${Math.random()*36}s;opacity:${.04+Math.random()*.08}`;h.appendChild(c);}
+}
+// ── ADMIN EMAILS ── add more here as needed
+var ADMIN_EMAILS=['director@k-nexus.co.uk','andrew@k-nexus.co.uk','admin@k-nexus.co.uk'];
+var currentUser=null;
+function initUI(){
+  var lm=document.getElementById('lm');
+  if(lm)lm.addEventListener('click',function(e){if(e.target===lm)closeModal();});
+  var mc=document.getElementById('modal-close');
+  if(mc)mc.onclick=closeModal;
+  var pi=document.getElementById('photo-inp');
+  if(pi)pi.addEventListener('change',function(){
+    var file=this.files[0];if(!file)return;
+    var r=new FileReader();
+    r.onload=function(e){
+      var img=document.getElementById('photo-img');
+      var prev=document.getElementById('photo-preview');
+      var ph=document.getElementById('photo-placeholder');
+      var drop=document.getElementById('photo-drop');
+      var err=document.getElementById('photo-err');
+      if(img)img.src=e.target.result;
+      if(prev)prev.style.display='block';
+      if(ph)ph.style.display='none';
+      if(err)err.style.display='none';
+      if(drop)drop.style.borderColor='#22c55e';
+    };
+    r.readAsDataURL(file);
+  });
+}
+
+function openAdmin(){
+  var existing=document.getElementById('admin-panel');
+  if(existing){existing.style.display='flex';return;}
+  var el=document.createElement('div');
+  el.id='admin-panel';
+  el.style.cssText='position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.92);backdrop-filter:blur(16px);display:flex;flex-direction:column;overflow:hidden';
+  el.innerHTML=`
+    <div style="background:linear-gradient(135deg,#0d0020,#000d1a);border-bottom:2px solid #f97316;padding:14px 24px;display:flex;align-items:center;gap:16px;flex-shrink:0">
+      <div style="font-family:Orbitron,sans-serif;font-size:1.1rem;font-weight:900;background:linear-gradient(135deg,#f97316,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">K-NEXUS ADMIN</div>
+      <div style="font-size:.78rem;color:#f97316;background:rgba(249,115,22,.12);border:1px solid #f97316;border-radius:100px;padding:2px 12px;font-weight:700">DIRECTOR ACCESS</div>
+      <div style="margin-left:auto;display:flex;gap:10px">
+        <button onclick="document.getElementById('admin-panel').style.display='none'" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 16px;color:#fff;cursor:pointer;font-family:Nunito,sans-serif;font-size:.85rem">Back to Site</button>
+        <button onclick="document.getElementById('admin-panel').remove();currentUser=null;document.getElementById('nbtn').textContent='Sign In / Join';document.getElementById('nbtn').style.background='linear-gradient(135deg,#8b5cf6,#ec4899)'" style="background:rgba(239,68,68,.15);border:1px solid #ef4444;border-radius:8px;padding:6px 16px;color:#ef4444;cursor:pointer;font-family:Nunito,sans-serif;font-size:.85rem">Sign Out</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;overflow-x:auto">
+      ${['Overview','Members','Bookings','Orders','Nexus 4','Announcements','Site Settings','Security'].map((t,i)=>`<div class="atab" data-tab="${i}" onclick="showAdminTab(${i})" style="padding:11px 20px;cursor:pointer;font-weight:700;font-size:.83rem;white-space:nowrap;border-bottom:2px solid transparent;color:#7070a0;transition:all .2s">${t}</div>`).join('')}
+    </div>
+    <div id="admin-body" style="flex:1;overflow-y:auto;padding:24px"></div>`;
+  document.body.appendChild(el);
+  showAdminTab(0);
+  el.querySelectorAll('.atab')[0].style.cssText+=';border-bottom-color:#f97316;color:#f97316';
+}
+
+var ADMIN_TABS=[
+  // 0 Overview
+  function(){return `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:28px">
+      ${[['Members Registered','247','#8b5cf6'],['Active Today','34','#22c55e'],['Revenue This Month','£1,840','#f97316'],['Open Bookings','18','#06b6d4'],['Pending Applications','7','#ec4899'],['Rooms Occupied Now','12','#facc15']].map(([l,v,c])=>`<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px;border-left:3px solid ${c}"><div style="font-family:Orbitron,sans-serif;font-size:1.9rem;font-weight:900;color:${c}">${v}</div><div style="color:#7070a0;font-size:.8rem;margin-top:4px;text-transform:uppercase;letter-spacing:1px">${l}</div></div>`).join('')}
+    </div>
+    <div style="background:linear-gradient(135deg,rgba(249,115,22,.1),rgba(239,68,68,.08));border:1px solid #f97316;border-radius:14px;padding:20px;margin-bottom:20px">
+      <div style="font-weight:800;color:#f97316;margin-bottom:6px">Set Your Director Password</div>
+      <div style="color:#7070a0;font-size:.84rem;margin-bottom:14px">First login — set your password now to secure your admin account.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <input id="set-pw1" type="password" placeholder="New password" style="flex:1;min-width:160px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:9px 13px;color:#fff;font-family:Nunito,sans-serif;outline:none">
+        <input id="set-pw2" type="password" placeholder="Confirm password" style="flex:1;min-width:160px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:9px 13px;color:#fff;font-family:Nunito,sans-serif;outline:none">
+        <button onclick="var p1=document.getElementById('set-pw1').value,p2=document.getElementById('set-pw2').value;if(!p1){alert('Enter a password');}else if(p1!==p2){alert('Passwords do not match');}else{alert('Password set! You can now use it to sign in.');}" style="background:linear-gradient(135deg,#f97316,#ef4444);border:none;border-radius:8px;padding:9px 20px;color:#fff;font-family:Nunito,sans-serif;font-weight:700;cursor:pointer">Set Password</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px">
+        <div style="font-weight:800;margin-bottom:14px;color:#f97316">Pending Member Applications</div>
+        ${['Sarah M. — Sanctuary','James R. — Explorer','Aisha K. — Family Sanctuary','Dev P. — Community Free','Lisa T. — Platinum'].map(n=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.87rem"><span>${n}</span><div style="display:flex;gap:6px"><button style="background:#22c55e;border:none;border-radius:6px;padding:3px 10px;color:#fff;cursor:pointer;font-size:.78rem">Approve</button><button style="background:#ef4444;border:none;border-radius:6px;padding:3px 10px;color:#fff;cursor:pointer;font-size:.78rem">Decline</button></div></div>`).join('')}
+      </div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px">
+        <div style="font-weight:800;margin-bottom:14px;color:#06b6d4">Today's Bookings</div>
+        ${[['09:00','Room 5 — VR Suite','James K.'],['11:00','Room 9 — Music Studio','Cara B.'],['13:00','Room 15 — Talking Space A','Appointment'],['14:30','Room 18 — Hydrotherapy','NHS Referral'],['16:00','Room 12 — E-Sports','Tournament'],['18:00','Room 7 — Events Space','Open Night']].map(([t,r,n])=>`<div style="display:flex;gap:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.84rem"><span style="color:#06b6d4;font-weight:700;width:45px">${t}</span><div><div>${r}</div><div style="color:#7070a0;font-size:.78rem">${n}</div></div></div>`).join('')}
+      </div>
+    </div>`;},
+  // 1 Members
+  function(){return `
+    <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+      <input placeholder="Search members..." style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 14px;color:#fff;font-family:Nunito,sans-serif;flex:1;min-width:200px;outline:none">
+      <select style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 14px;color:#fff;font-family:Nunito,sans-serif"><option>All Tiers</option><option>Community Free</option><option>Explorer</option><option>Sanctuary</option><option>Platinum</option><option>Family</option></select>
+      <button style="background:linear-gradient(135deg,#8b5cf6,#ec4899);border:none;border-radius:8px;padding:8px 18px;color:#fff;font-family:Nunito,sans-serif;font-weight:700;cursor:pointer">+ Add Member</button>
+    </div>
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+        <thead><tr style="background:rgba(255,255,255,.06)">${['Name','Email','Tier','RFID','Status','Joined','Actions'].map(h=>`<th style="padding:11px 14px;text-align:left;color:#7070a0;font-size:.78rem;text-transform:uppercase;letter-spacing:1px">${h}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${[['Andrew M.','director@k-nexus.co.uk','DIRECTOR','0xF1A2','Active','01/01/25'],['Jamie K.','jamie@email.com','Platinum','0xB3C4','Active','14/01/25'],['Sarah P.','sarah@email.com','Sanctuary','0xD5E6','Active','20/01/25'],['Dev R.','dev@email.com','Explorer','0xA7B8','Suspended','05/02/25'],['Lisa T.','lisa@email.com','Community Free','0xC9D0','Pending','28/02/25']].map(([n,e,t,r,s,j])=>`<tr style="border-top:1px solid rgba(255,255,255,.05)"><td style="padding:10px 14px;font-weight:700">${n}</td><td style="padding:10px 14px;color:#7070a0">${e}</td><td style="padding:10px 14px"><span style="background:rgba(139,92,246,.2);border-radius:100px;padding:2px 10px;font-size:.75rem;color:#c4b5fd">${t}</span></td><td style="padding:10px 14px;color:#06b6d4;font-family:monospace">${r}</td><td style="padding:10px 14px"><span style="color:${s==='Active'?'#22c55e':s==='Suspended'?'#ef4444':'#facc15'}">${s}</span></td><td style="padding:10px 14px;color:#7070a0">${j}</td><td style="padding:10px 14px"><button style="background:rgba(139,92,246,.2);border:none;border-radius:6px;padding:3px 10px;color:#c4b5fd;cursor:pointer;font-size:.78rem">Edit</button></td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;},
+  // 2 Bookings
+  function(){return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px">
+        <div style="font-weight:800;margin-bottom:16px;color:#8b5cf6">Upcoming Bookings</div>
+        ${[['Today 14:30','Room 18 Hydrotherapy','NHS Ref #442','Confirmed'],['Today 16:00','Room 12 E-Sports','Tournament — 20 people','Confirmed'],['Tomorrow 09:00','Room 5 VR Suite','Jamie K.','Pending'],['Tomorrow 11:00','Room 9 Music Studio','Band Practice x4','Confirmed'],['Fri 10:00','Room 7 Events Space','Community Market','Confirmed']].map(([t,r,n,s])=>`<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)"><div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-weight:700;font-size:.87rem">${r}</span><span style="font-size:.75rem;color:${s==='Confirmed'?'#22c55e':'#facc15'}">${s}</span></div><div style="color:#7070a0;font-size:.8rem">${t} — ${n}</div></div>`).join('')}
+      </div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px">
+        <div style="font-weight:800;margin-bottom:16px;color:#06b6d4">Quick Book a Room</div>
+        <div style="margin-bottom:10px"><label style="font-size:.8rem;color:#7070a0;display:block;margin-bottom:4px">Room</label><select style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px;color:#fff;font-family:Nunito,sans-serif"><option>Room 5 — VR Suite</option><option>Room 9 — Music Studio</option><option>Room 12 — E-Sports</option><option>Room 18 — Hydrotherapy</option><option>Room 7 — Events Space</option></select></div>
+        <div style="margin-bottom:10px"><label style="font-size:.8rem;color:#7070a0;display:block;margin-bottom:4px">Date &amp; Time</label><input type="datetime-local" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px;color:#fff;font-family:Nunito,sans-serif"></div>
+        <div style="margin-bottom:16px"><label style="font-size:.8rem;color:#7070a0;display:block;margin-bottom:4px">Member / Group Name</label><input placeholder="Name or group" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px;color:#fff;font-family:Nunito,sans-serif"></div>
+        <button style="width:100%;background:linear-gradient(135deg,#06b6d4,#0891b2);border:none;border-radius:9px;padding:10px;color:#fff;font-family:Nunito,sans-serif;font-weight:700;cursor:pointer">Confirm Booking</button>
+      </div>
+    </div>`;},
+  // 3 Orders
+  function(){return `
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden">
+      <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.08);font-weight:800;color:#ec4899">Recent Shop Orders</div>
+      <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+        <thead><tr style="background:rgba(255,255,255,.06)">${['Order','Member','Items','Total','Status','Date'].map(h=>`<th style="padding:10px 14px;text-align:left;color:#7070a0;font-size:.78rem;text-transform:uppercase">${h}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${[['#1042','Jamie K.','K-NEXUS Hoodie x1','£35','Dispatched','01/03/25'],['#1041','Sarah P.','Mug x2, Stickers x1','£34','Processing','01/03/25'],['#1040','Dev R.','Explorer Tee x1','£22','Dispatched','28/02/25'],['#1039','Lisa T.','Gift Card £20','£20','Complete','27/02/25'],['#1038','Cara B.','Platinum Hoodie x1, Cap x1','£55','Processing','26/02/25']].map(([o,m,i,t,s,d])=>`<tr style="border-top:1px solid rgba(255,255,255,.05)"><td style="padding:9px 14px;color:#c4b5fd">${o}</td><td style="padding:9px 14px;font-weight:700">${m}</td><td style="padding:9px 14px;color:#7070a0">${i}</td><td style="padding:9px 14px;font-weight:700;color:#22c55e">${t}</td><td style="padding:9px 14px"><span style="color:${s==='Dispatched'?'#22c55e':s==='Complete'?'#06b6d4':'#facc15'}">${s}</span></td><td style="padding:9px 14px;color:#7070a0">${d}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;},
+  // 4 Nexus 4
+  function(){return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px">
+        <div style="font-weight:800;margin-bottom:16px;color:#c4b5fd">Post Announcement to Feed</div>
+        <div style="margin-bottom:10px"><label style="font-size:.8rem;color:#7070a0;display:block;margin-bottom:4px">Posted as</label><select style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px;color:#fff;font-family:Nunito,sans-serif"><option>K-NEXUS Official</option><option>Director Andrew</option><option>K-NEXUS Cafe</option><option>Events Team</option></select></div>
+        <div style="margin-bottom:10px"><textarea placeholder="Write your post..." rows="4" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px;color:#fff;font-family:Nunito,sans-serif;resize:vertical"></textarea></div>
+        <button style="width:100%;background:linear-gradient(135deg,#8b5cf6,#ec4899);border:none;border-radius:9px;padding:10px;color:#fff;font-family:Nunito,sans-serif;font-weight:700;cursor:pointer">Post to Nexus 4</button>
+      </div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px">
+        <div style="font-weight:800;margin-bottom:16px;color:#ef4444">Flagged Posts</div>
+        ${['Post by Dev R. — Contains potential spam link','Post by anon user — Reported by 3 members','Post by Jamie K. — Flagged as promotional'].map(p=>`<div style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.85rem"><div style="margin-bottom:6px;color:#fca5a5">${p}</div><div style="display:flex;gap:6px"><button style="background:#22c55e;border:none;border-radius:6px;padding:3px 10px;color:#fff;cursor:pointer;font-size:.78rem">Approve</button><button style="background:#ef4444;border:none;border-radius:6px;padding:3px 10px;color:#fff;cursor:pointer;font-size:.78rem">Remove</button><button style="background:rgba(255,255,255,.08);border:none;border-radius:6px;padding:3px 10px;color:#fff;cursor:pointer;font-size:.78rem">Warn User</button></div></div>`).join('')}
+      </div>
+    </div>`;},
+  // 5 Announcements
+  function(){return `
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:24px;max-width:700px">
+      <div style="font-weight:800;margin-bottom:6px;color:#facc15">Send Member Announcement</div>
+      <div style="color:#7070a0;font-size:.85rem;margin-bottom:20px">Push a message to all members, a specific tier, or individual members. Goes to Nexus 4 feed + email.</div>
+      <div style="margin-bottom:12px"><label style="font-size:.8rem;color:#7070a0;display:block;margin-bottom:4px">Send to</label><select style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px;color:#fff;font-family:Nunito,sans-serif"><option>All Members</option><option>Community Free</option><option>Explorer+</option><option>Sanctuary+</option><option>Platinum only</option><option>All Families</option><option>Specific member...</option></select></div>
+      <div style="margin-bottom:12px"><label style="font-size:.8rem;color:#7070a0;display:block;margin-bottom:4px">Subject</label><input placeholder="Announcement subject" style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px;color:#fff;font-family:Nunito,sans-serif"></div>
+      <div style="margin-bottom:16px"><label style="font-size:.8rem;color:#7070a0;display:block;margin-bottom:4px">Message</label><textarea rows="5" placeholder="Write your announcement..." style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px;color:#fff;font-family:Nunito,sans-serif;resize:vertical"></textarea></div>
+      <div style="display:flex;gap:10px"><button style="flex:1;background:linear-gradient(135deg,#f97316,#facc15);border:none;border-radius:9px;padding:11px;color:#fff;font-family:Nunito,sans-serif;font-weight:700;cursor:pointer">Send Announcement</button><button style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:9px;padding:11px 18px;color:#fff;font-family:Nunito,sans-serif;cursor:pointer">Preview</button></div>
+    </div>`;},
+  // 6 Site Settings
+  function(){return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px">
+        <div style="font-weight:800;margin-bottom:16px;color:#22c55e">Site Controls</div>
+        ${[['Registrations Open','toggle',true],['Show Membership Prices','toggle',true],['Show Day Trips','toggle',true],['Maintenance Mode','toggle',false],['Show Coming Soon Banner','toggle',false]].map(([l,type,on])=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="font-size:.88rem">${l}</span><div style="width:40px;height:22px;border-radius:11px;background:${on?'#22c55e':'#374151'};cursor:pointer;position:relative;transition:background .2s"><div style="width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;${on?'right:2px':'left:2px'};transition:all .2s"></div></div></div>`).join('')}
+      </div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px">
+        <div style="font-weight:800;margin-bottom:16px;color:#06b6d4">Deploy Site</div>
+        <div style="color:#7070a0;font-size:.85rem;line-height:1.7;margin-bottom:16px">Rebuild and push the K-NEXUS site live. The Rift desktop app handles the full deploy with supplier data via the SITE tab.</div>
+        <div style="padding:12px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.3);border-radius:10px;font-size:.82rem;color:#fdba74;margin-bottom:14px">To deploy: Open Rift on your desktop, go to the SITE tab, click AUTO-BUILD then DEPLOY LIVE. Your .env file controls where it goes.</div>
+        <div style="font-size:.82rem;color:#7070a0">Domain: k-nexus.co.uk<br>Host: Hostinger / FTP<br>Status: <span style="color:#22c55e">Connected</span></div>
+      </div>
+    </div>`;},
+  // 7 Security
+  function(){return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px">
+        <div style="font-weight:800;margin-bottom:16px;color:#22c55e">NexusShield Status</div>
+        ${[['Firewall','Active','#22c55e'],['Login Attempt Monitor','Active','#22c55e'],['GDPR Data Vault','Encrypted','#22c55e'],['Session Tokens','Rotating','#22c55e'],['Last Security Scan','Today 08:14','#06b6d4'],['Blocked IPs','3 in last 24h','#f97316']].map(([l,v,c])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.85rem"><span style="color:#7070a0">${l}</span><span style="color:${c};font-weight:700">${v}</span></div>`).join('')}
+      </div>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px">
+        <div style="font-weight:800;margin-bottom:16px;color:#ef4444">Recent Login Attempts</div>
+        ${[['director@k-nexus.co.uk','192.168.1.1','Success','Today 09:12'],['unknown@test.com','45.33.32.156','Blocked','Today 03:44'],['admin@k-nexus.co.uk','192.168.1.1','Success','Yesterday 17:30'],['unknown','185.220.101.x','Blocked','Yesterday 02:11']].map(([u,ip,s,t])=>`<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.82rem"><div style="display:flex;justify-content:space-between"><span style="font-weight:700">${u}</span><span style="color:${s==='Success'?'#22c55e':'#ef4444'}">${s}</span></div><div style="color:#7070a0;font-size:.76rem">${ip} — ${t}</div></div>`).join('')}
+      </div>
+    </div>`;}
+];
+
+function showAdminTab(i){
+  document.querySelectorAll('.atab').forEach(function(t,idx){
+    t.style.borderBottomColor=idx===i?'#f97316':'transparent';
+    t.style.color=idx===i?'#f97316':'#7070a0';
+  });
+  document.getElementById('admin-body').innerHTML=ADMIN_TABS[i]();
+}
+
+// ── CUSTOMER RIFT CHATBOT ──
+var RIFT_RESPONSES={
+  'price':['Basic access is always free. Explorer is £10/month, Sanctuary is £25/month, Platinum is £50/month. Family plans start free. Scroll to Membership to compare.'],
+  'free':['Yes — K-NEXUS is always free to walk into and use. No hidden charges. RFID card on request. Paid tiers just unlock perks.'],
+  'cost':['Walk-in is always free. Paid memberships start at £10/month (Explorer) and go up to £50/month (Platinum) with big perks like free coffees and pamper days.'],
+  'membership':['7 tiers from free to Platinum at £50/month. Free always stays free — paid tiers unlock coffees, pamper days, and discounts. Scroll to Membership to compare them all.'],
+  'join':['Hit the Join Free button in the nav or scroll to Membership. Takes 2 minutes. You will need a profile photo. Your RFID card is ready on your first visit.'],
+  'register':['Registration is free and takes 2 minutes. Click Join Free in the nav. Bring ID on your first visit and we will sort your RFID card.'],
+  'room':['27 spaces — arcade, VR, music studio, creation lab, e-sports, STEM, sensory room, veterans suite, hydrotherapy, cafe, and more. Click any room card to explore.'],
+  'space':['K-NEXUS has 27 dedicated spaces across three sectors: Cafe & Social (rooms 1-5), Experience & Learning (6-15), and Wellbeing & Clinical (16-27).'],
+  'arcade':['Room 4 is the Arcade Hall — classic machines, fighting sticks, pinball, prize wall, plushie machines. Walk in on your member card. Japanese and UK machines.','The Arcade Hall has 40+ machines including classic Japanese arcade cabinets, VR stations, and fighting game setups. Walk in, no booking needed.'],
+  'vr':['Room 5 is the VR Experience Suite — 12 stations, all abilities welcome. Book a slot at the front desk or through your member portal.'],
+  'music':['Room 9 is the Music & Drama Studio — professional recording, soundproofed booths, full mixing desk, instruments. Book a slot. Open mic nights available.','The music studio has a full recording setup — mixing desk, soundproofed booths, instruments. Members book slots. Open mic nights are regular.'],
+  'studio':['We have a Music Studio (Room 9), Animation Studio (Room 10), Streaming Room (Room 11), and Creation Lab (Room 6). All bookable for members.'],
+  'animation':['Room 10 is the Animation Studio — professional workstations, rendering, editing suites. Industry-grade tools at community prices. Book a slot.'],
+  'stream':['Room 11 is the Streaming Room — green screen, ring lights, capture cards, ultra-fast fibre. Stream gaming, events, or content live. Members book slots.'],
+  'esport':['Room 12 is the E-Sports Suite — high-refresh monitors, low-latency setups, gaming chairs. Disability-adapted controls available. Walk in or book for events.'],
+  'gaming':['Room 4 is the Arcade Hall, Room 5 is VR, Room 12 is E-Sports. All walk-in on your member card. Tournaments run regularly.'],
+  'stem':['Room 8 is the STEM Lab & Viewing Space — robotics, coding, science. School groups and community members welcome. Book for groups.'],
+  'cafe':['The Tin Top Cafe is Room 1 — award-winning coffee, hot food, pizza. Walk in, pay as you go. Explorer+ members get free coffees each month.'],
+  'coffee':['Tin Top Coffee in Room 1 is our award-winning cafe. Pay as you go for everyone. Explorer members get 1 free coffee/month, Sanctuary gets 3, Platinum gets unlimited.'],
+  'trip':['Day trips: Edinburgh £15, Highlands £25, Glasgow £12, Broughty Ferry £8, Wildlife Safari £20, Dundee Night Out £10. All accessible. Scroll to Day Trips to book.'],
+  'edinburgh':['Edinburgh day trip from £15 — castle, Royal Mile, street food. Full day, accessible transport, fully supported. Book at any till point.'],
+  'glasgow':['Glasgow day trip from £12 — shopping, galleries, food scene. Full day out. Accessible coach. Book at the hub.'],
+  'highlands':['Highlands day trip from £25 — Cairngorms, scenic walk, lunch, views. Sensory-friendly. Book at any till point.'],
+  'hoodie':['The K-NEXUS hoodie is £35 — premium heavyweight, embroidered logo. Scroll to Shop to order.'],
+  'merch':['Hoodies £35, tees £22, mugs £14, caps £20, art prints £18, totes £12, sticker packs £6, RFID gift cards from £10. All profits back into the community.'],
+  'shop':['Our merch shop is on this page — scroll to the Shop section. Hoodies, tees, mugs, caps, art prints and more. All profits fund the hub.'],
+  'gift':['RFID Gift Cards start from £10 and work as credit for any K-NEXUS service. Great for a new member.'],
+  'nexus':['Nexus 4 is the K-NEXUS social feed — no algorithm, no ads, no data selling. Just chronological posts from real community members.'],
+  'social':['Nexus 4 is our in-house social platform. No algorithms, no ads. Just the community. Sign up free.'],
+  'book':['Book rooms at any till point in the hub, or through your member portal. Clinical spaces need a referral from a healthcare provider.'],
+  'veteran':['Room 22 is the Veterans Support Suite — built for armed forces veterans and families. Walk in anytime, no referral needed.'],
+  'autism':['K-NEXUS is neurodivergent-first. Room 23 is the dedicated neurodivergent space — no masking, sensory tools, community who get it.'],
+  'adhd':['Room 23 is built for neurodivergent members — ADHD, autism, dyslexia, dyspraxia. Sensory tools, focus aids, no masking. Walk in.'],
+  'sensory':['Room 19 is the Sensory Space — bubble tubes, fibre optics, weighted items, adjustable lighting. Free for members. Walk in or book.'],
+  'mental':['Our wellbeing spaces cover rooms 14-21 — talking spaces, group therapy, sensory room, clinical assessment. NHS Social Prescribing pathways connected.'],
+  'therapy':['We have two private Talking Spaces (Rooms 15 and 16), a Group Support Space (Room 17), and an NHS-linked clinical wing. Referrals and walk-ins both welcome.'],
+  'hydrotherapy':['Room 18 is the Hydrotherapy Suite — specialist water therapy for physical rehabilitation, brain injury recovery, and chronic pain. Clinician referral required.'],
+  'rfid':['Your RFID card is your key to K-NEXUS. Controls your access based on membership and age. Pick one up at the front desk on your first visit — free with any registration.'],
+  'nhs':['K-NEXUS is linked to NHS Tayside for Social Prescribing referrals. Clinical spaces can be accessed through NHS referral pathways.'],
+  'contact':['Email director@k-nexus.co.uk — or visit us in Dundee. Company number SC881084. We reply to all emails within 2 working days.'],
+  'location':['We are based in Dundee, Scotland — the first K-NEXUS hub. Email director@k-nexus.co.uk for the current address and opening times.'],
+  'hours':['Opening times vary by space — drop us an email at director@k-nexus.co.uk or ask at the front desk.'],
+  'age':['K-NEXUS is 16 and over for solo visits. Family memberships cover all ages with age-gated RFID access automatically enforced.'],
+  'homeless':['K-NEXUS has crisis support services and a warm space for people experiencing homelessness. No referral needed — just walk in.'],
+  'prison':['We have a prison release reintegration programme. Walk in on release day — no appointment needed. We will help with next steps.'],
+  'hello':['Hey! Great to have you here. What can I help you with today?','Hi! Ask me anything about K-NEXUS — rooms, membership, events, anything.'],
+  'hi':['Hey! Ask me anything — membership, rooms, day trips, the shop. What do you need?'],
+  'help':['I can help with membership, rooms and spaces, day trips, the shop, booking, NHS referrals, and anything about the hub. What would you like to know?'],
+  'default':['I am Rift, the K-NEXUS AI. Ask me about membership, rooms, day trips, the shop, or anything about the hub.','Not sure about that one — try asking about rooms, membership, day trips, or the shop. Or email director@k-nexus.co.uk directly.','Good question — email director@k-nexus.co.uk for anything I cannot answer directly.']
+};
+var _srDebounce=false;
+function sr(){
+  if(_srDebounce)return;_srDebounce=true;setTimeout(function(){_srDebounce=false;},800);
+  var inp=document.getElementById('rcin');
+  if(!inp)return;
+  var msg=(inp.value||'').trim();
+  if(!msg)return;
+  am(msg,'user');
+  inp.value='';
+  inp.focus();
+  // Special commands
+  var low=msg.toLowerCase();
+  if(low.indexOf('admin')>=0||low.indexOf('director')>=0){
+    if(currentUser&&currentUser.isAdmin){
+      am('Opening your admin panel now...','ai');
+      setTimeout(function(){openAdmin();},300);
+    } else {
+      am('The admin panel is for directors only. Sign in with director@k-nexus.co.uk to access it.','ai');
+    }
+    return;
+  }
+  setTimeout(function(){
+    var rep=RIFT_RESPONSES.default[Math.floor(Math.random()*RIFT_RESPONSES.default.length)];
+    var keys=Object.keys(RIFT_RESPONSES);
+    for(var k=0;k<keys.length;k++){
+      if(keys[k]!=='default'&&low.indexOf(keys[k])>=0){
+        var arr=RIFT_RESPONSES[keys[k]];
+        rep=arr[Math.floor(Math.random()*arr.length)];
+        break;
+      }
+    }
+    am(rep,'ai');
+  },350);
+}
+function am(t,type){
+  var m=document.getElementById('rcmsgs');
+  var d=document.createElement('div');
+  d.className='rm '+type;
+  d.textContent=t;
+  m.appendChild(d);
+  m.scrollTop=m.scrollHeight;
+}
+function rFlow(){
+  var items=[
+    {e:'🎨',t:'Anime Creation Lab',d:'Members create original manga, animations and character designs — shared weekly across our socials.',c:'var(--pu)'},
+    {e:'🎵',t:'Music Studio Sessions',d:'Original tracks from our music studio. From hip-hop to classical — every genre, every background.',c:'var(--pi)'},
+    {e:'🏆',t:'E-Sports Tournaments',d:'Weekly gaming tournaments, fantasy football leagues, and disability sports events in Room 14.',c:'var(--cy)'},
+    {e:'🧠',t:'Mental Health Wins',d:'Anonymous success stories from our clinic — with permission. Real journeys, real progress.',c:'var(--gr)'},
+    {e:'🎮',t:'Arcade Highlights',d:'Leaderboards, high scores, new machine announcements and gaming events from the Arcade Hall.',c:'var(--or)'},
+    {e:'🤝',t:'Community Events',d:'From open nights to film screenings — everything happening across all 27 rooms this week.',c:'var(--ye)'},
+  ];
+  var fg=document.getElementById('flow-grid');
+  if(fg) fg.innerHTML=items.map(function(f){return '<div class="mcard" style="border-color:'+f.c+'22"><div style="font-size:2.5rem;margin-bottom:12px">'+f.e+'</div><div class="mname" style="color:'+f.c+'">'+f.t+'</div><div class="mdesc">'+f.d+'</div><button class="mbtn" onclick="openModal('join')" style="background:'+f.c+'22;border:1px solid '+f.c+';color:'+f.c+';border-radius:50px;padding:7px 18px;font-weight:700;font-size:.85rem;cursor:pointer;margin-top:8px">Join to Follow</button></div>';}).join('');
+}
+window.addEventListener('scroll',function(){document.getElementById('nav').style.background=scrollY>80?'rgba(7,7,26,.98)':'rgba(7,7,26,.92)';});
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',function(){rAbout();rMem();rRooms();rN4();rMerch();rTrips();rLogos();rContact();rFlow();buildScene();initUI();});}
+else{rAbout();rMem();rRooms();rN4();rMerch();rTrips();rLogos();rContact();rFlow();buildScene();initUI();}
+</script>
+<div id="rmodal"></div>
+<div id="access-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.88);align-items:center;justify-content:center;padding:20px">
+  <div style="background:linear-gradient(135deg,#1a1a3a,#0f0f25);border:2px solid #8b5cf6;border-radius:20px;max-width:500px;width:100%;padding:32px;font-family:Nunito,sans-serif">
+    <div style="font-size:2rem;margin-bottom:8px">💜</div>
+    <div style="font-family:Orbitron,sans-serif;font-size:1.1rem;font-weight:900;color:#c4b5fd;margin-bottom:6px">Welcome to K-NEXUS</div>
+    <div style="color:#8888bb;font-size:.9rem;margin-bottom:20px">Do you have any access needs? We will adjust your experience automatically.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;color:#e0e0ff"><input type="checkbox" id="acc-wheelchair" style="accent-color:#8b5cf6"> Wheelchair access</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;color:#e0e0ff"><input type="checkbox" id="acc-sensory"> Sensory sensitivities</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;color:#e0e0ff"><input type="checkbox" id="acc-colour"> Colour blindness</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;color:#e0e0ff"><input type="checkbox" id="acc-noise"> Noise sensitivity</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;color:#e0e0ff"><input type="checkbox" id="acc-adhd"> ADHD / Autism</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;color:#e0e0ff"><input type="checkbox" id="acc-none"> None / prefer not to say</label>
+    </div>
+    <div style="font-size:.78rem;color:#5555a0;margin-bottom:16px">Saved locally. Never shared. Update anytime in your profile.</div>
+    <button onclick="saveAccessNeeds()" style="width:100%;background:linear-gradient(135deg,#8b5cf6,#ec4899);border:none;border-radius:10px;padding:13px;color:#fff;font-family:Nunito,sans-serif;font-weight:900;font-size:1rem;cursor:pointer">Save &amp; Enter K-NEXUS &#8594;</button>
+  </div>
+</div>
+<script>
+function saveAccessNeeds(){
+  var acc={wheelchair:document.getElementById('acc-wheelchair').checked,
+    sensory:document.getElementById('acc-sensory').checked,
+    colour:document.getElementById('acc-colour').checked,
+    noise:document.getElementById('acc-noise').checked,
+    adhd:document.getElementById('acc-adhd').checked};
+  localStorage.setItem('knx_access',JSON.stringify(acc));
+  var m=document.getElementById('access-modal');if(m)m.style.display='none';
+  applyAccess(acc);
+}
+function applyAccess(acc){
+  if(!acc)return;
+  if(acc.sensory||acc.adhd){document.querySelectorAll('*').forEach(function(el){try{el.style.animationPlayState='paused';}catch(e){}});}
+  if(acc.colour){document.body.style.filter='saturate(0) contrast(1.3) brightness(1.1)';}
+  if(acc.adhd||acc.sensory){document.body.style.fontSize='1.06rem';}
+}
+function doLogout(){
+  localStorage.removeItem('knx_user');
+  var overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;font-family:Nunito,sans-serif;text-align:center;flex-direction:column;gap:16px';
+  overlay.innerHTML='<div style="font-size:3rem">&#128156;</div><div style="font-size:1.4rem;font-weight:900;color:#c4b5fd">Thanks for being in K-NEXUS.</div><div style="color:#a78bfa">Come back soon!</div>';
+  document.body.appendChild(overlay);
+  setTimeout(function(){overlay.remove();},2500);
+}
+// On page load: restore session, apply access, show logout btn
+(function(){
+  var u=null;try{u=JSON.parse(localStorage.getItem('knx_user')||'null');}catch(e){}
+  if(u&&u.email){
+    currentUser={email:u.email,isAdmin:u.isAdmin,name:u.isAdmin?'Director':u.email.split('@')[0]};
+    var nb=document.getElementById('nbtn');
+    if(nb){nb.textContent=u.isAdmin?'&#9881; ADMIN':'My Account';nb.onclick=function(){if(u.isAdmin)openAdmin();else openModal('in');};}
+    var lb=document.getElementById('logout-btn');if(lb)lb.style.display='inline-block';
+    if(u.isAdmin&&!document.getElementById('admin-quickbar')){
+      var bar=document.createElement('div');bar.id='admin-quickbar';
+      bar.style.cssText='position:fixed;top:62px;left:0;right:0;z-index:9995;background:linear-gradient(135deg,rgba(249,115,22,.15),rgba(239,68,68,.1));border-bottom:2px solid #f97316;padding:8px 24px;display:flex;align-items:center;gap:12px';
+      bar.innerHTML='<span style="font-family:Orbitron,sans-serif;font-size:.75rem;font-weight:900;color:#f97316;letter-spacing:2px">DIRECTOR MODE</span><button onclick="openAdmin()" style="background:linear-gradient(135deg,#f97316,#ef4444);border:none;border-radius:8px;padding:6px 18px;color:#fff;font-family:Nunito,sans-serif;font-weight:800;cursor:pointer;font-size:.85rem">&#9881; OPEN ADMIN PANEL</button><span style="color:#7070a0;font-size:.78rem;margin-left:auto">'+u.email+'</span>';
+      document.body.appendChild(bar);
+    }
+    var acc=null;try{acc=JSON.parse(localStorage.getItem('knx_access')||'null');}catch(e){}
+    if(acc)applyAccess(acc);
+  }
+  // Show logout on signIn
+  var _origSignIn=doSignIn;
+  doSignIn=function(){_origSignIn();var lb=document.getElementById('logout-btn');if(lb)lb.style.display='inline-block';};
+})();
+</script>
+</body>
+</html>

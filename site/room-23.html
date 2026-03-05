@@ -1,0 +1,178 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+a{color:inherit;text-decoration:none}
+body{font-family:Nunito,sans-serif;color:#f0f0ff;min-height:100vh}
+body *{animation-play-state:var(--anim-play,running)}
+.cb-mode{filter:saturate(0) contrast(1.3) brightness(1.1)}
+.page-content{position:relative;z-index:10;padding-top:76px;max-width:1100px;margin:0 auto;padding-bottom:60px;padding-left:22px;padding-right:22px}
+.room-card-inner{background:rgba(255,255,255,.05);border:1px solid var(--ac,#8b5cf6);border-radius:20px;padding:30px;margin-bottom:24px;backdrop-filter:blur(8px)}
+.room-title{font-family:Orbitron,sans-serif;font-size:1.6rem;font-weight:900;margin-bottom:6px}
+.room-area{font-size:.82rem;text-transform:uppercase;letter-spacing:2px;font-weight:700;margin-bottom:14px;color:var(--ac,#8b5cf6)}
+.room-desc{font-size:.96rem;line-height:1.8;color:#b0b0d0;margin-bottom:22px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:22px}
+.stat{background:rgba(255,255,255,.04);border:1px solid var(--ac,#8b5cf6);border-left:3px solid var(--ac,#8b5cf6);border-radius:10px;padding:13px}
+.stat-lbl{font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:#6666a0;margin-bottom:4px}
+.stat-val{font-size:.88rem;font-weight:800;color:#fff}
+.note-box{background:rgba(255,255,255,.04);border:1px solid var(--ac,#8b5cf6);border-radius:12px;padding:16px;font-size:.87rem;color:#a0a0cc;line-height:1.6;margin-bottom:22px}
+.note-box strong{color:var(--ac,#8b5cf6)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+.btn-p{background:linear-gradient(135deg,var(--ac,#8b5cf6),rgba(0,0,0,.2));border:none;border-radius:10px;padding:13px 24px;color:#fff;font-family:Nunito,sans-serif;font-weight:900;font-size:.95rem;cursor:pointer;text-decoration:none;display:inline-block}
+.btn-s{background:rgba(255,255,255,.05);border:1px solid var(--ac,#8b5cf6);border-radius:10px;padding:13px 18px;color:var(--ac,#8b5cf6);font-family:Nunito,sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;text-decoration:none;display:inline-block}
+.room-nav{display:flex;justify-content:space-between;margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08)}
+.rnav{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 16px;color:#a78bfa;text-decoration:none;max-width:48%;font-size:.82rem}
+.rnav small{display:block;color:#5555a0;font-size:.68rem;margin-bottom:2px;text-transform:uppercase;letter-spacing:1px}
+.room-icon{font-size:5rem;margin-bottom:16px;display:block;filter:drop-shadow(0 0 20px var(--ac,#8b5cf6));animation:icon-glow 3s ease-in-out infinite alternate}
+@keyframes icon-glow{0%{filter:drop-shadow(0 0 10px var(--ac,#8b5cf6))}100%{filter:drop-shadow(0 0 30px var(--ac,#8b5cf6))}}
+</style>
+<title>Neurodivergent Space — K-NEXUS Dundee</title>
+<style>
+
+.theme-bg{background:linear-gradient(180deg,#05030f 0%,#0a0520 100%);min-height:100vh;overflow:hidden;position:relative}
+.orb{position:fixed;border-radius:50%;animation:orb-drift ease-in-out infinite;z-index:1;filter:blur(1px)}
+@keyframes orb-drift{0%,100%{transform:translate(0,0)}33%{transform:translate(var(--ox),var(--oy))}66%{transform:translate(calc(var(--ox)*-.5),var(--oy))}}
+.star-c{position:fixed;top:0;left:0;right:0;height:70%;z-index:0}
+.star{position:absolute;border-radius:50%;background:#fff;animation:star-twinkle ease-in-out infinite}
+@keyframes star-twinkle{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
+.pillow-char{position:fixed;bottom:90px;font-size:2.5rem;animation:pillow-snug 5s ease-in-out infinite;z-index:3}
+@keyframes pillow-snug{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+</style>
+</head>
+<body class="theme-bg" style="--ac:#ec4899">
+<div class="star-c" id="star-c"></div>
+<div id="orb-c"></div>
+<div class="pillow-char" style="left:20%">🧸</div>
+<div class="pillow-char" style="left:45%;animation-delay:-2s">😌</div>
+<div class="pillow-char" style="right:18%;animation-delay:-4s">🌙</div>
+<script>
+(function(){
+  var sc=document.getElementById('star-c');
+  for(var i=0;i<80;i++){var s=document.createElement('div');s.className='star';var sz=Math.random()*2+1;
+  s.style.cssText='width:'+sz+'px;height:'+sz+'px;left:'+Math.random()*100+'%;top:'+Math.random()*100+'%;animation-duration:'+(2+Math.random()*4)+'s;animation-delay:'+(-Math.random()*6)+'s';sc.appendChild(s);}
+  var oc=document.getElementById('orb-c');var cols=['rgba(249,115,22,.25)','rgba(139,92,246,.2)','rgba(236,72,153,.18)','rgba(6,182,212,.15)'];
+  for(var j=0;j<12;j++){var o=document.createElement('div');o.className='orb';var sz2=40+Math.random()*80;
+  o.style.cssText='width:'+sz2+'px;height:'+sz2+'px;background:'+cols[j%cols.length]+';left:'+Math.random()*90+'%;top:'+Math.random()*80+'%;';
+  o.style.setProperty('--ox',(Math.random()*100-50)+'px');o.style.setProperty('--oy',(Math.random()*80-40)+'px');
+  o.style.animationDuration=(6+Math.random()*8)+'s';o.style.animationDelay=(-Math.random()*10)+'s';oc.appendChild(o);}
+})();
+</script>
+<nav style="position:fixed;top:0;left:0;right:0;z-index:1000;height:56px;display:flex;align-items:center;padding:0 20px;gap:10px;background:rgba(7,7,26,.95);backdrop-filter:blur(16px);border-bottom:1px solid rgba(139,92,246,.2);font-family:Nunito,sans-serif;font-size:.82rem">
+  <a href="index.html" style="font-family:Orbitron,sans-serif;font-size:.85rem;font-weight:900;background:linear-gradient(135deg,#c4b5fd,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-right:8px">K✦NEXUS</a>
+  <a href="index.html" style="color:#a78bfa;font-weight:700">🏠 Home</a>
+  <a href="spaces.html" style="color:#a78bfa;font-weight:700">🗺 Spaces</a>
+  <a href="index.html#membership" style="color:#a78bfa;font-weight:700">💜 Join</a>
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+    <button id="music-btn" onclick="toggleMusic('sensory')" style="background:rgba(139,92,246,.2);border:1px solid #8b5cf6;border-radius:20px;padding:5px 12px;color:#c4b5fd;cursor:pointer;font-size:.75rem;font-family:Nunito,sans-serif;font-weight:700">✨ Chimes</button>
+    <button id="anim-btn" onclick="toggleAnim()" style="background:rgba(249,115,22,.15);border:1px solid #f97316;border-radius:20px;padding:5px 12px;color:#fb923c;cursor:pointer;font-size:.75rem;font-family:Nunito,sans-serif;font-weight:700">✨ Anim ON</button>
+    <button id="colour-btn" onclick="toggleColour()" style="background:rgba(6,182,212,.12);border:1px solid #06b6d4;border-radius:20px;padding:5px 12px;color:#67e8f9;cursor:pointer;font-size:.75rem;font-family:Nunito,sans-serif;font-weight:700">👁 Colour Blind</button>
+    <button onclick="doLogout()" style="background:rgba(239,68,68,.15);border:1px solid #ef4444;border-radius:20px;padding:5px 12px;color:#fca5a5;cursor:pointer;font-size:.75rem;font-family:Nunito,sans-serif;font-weight:700">🚪 Logout</button>
+  </div>
+</nav>
+<div class="page-content">
+  <div class="room-card-inner">
+    <span class="room-icon">⚡</span>
+    <div style="font-size:.7rem;color:#ec4899;letter-spacing:3px;font-family:Orbitron,sans-serif;margin-bottom:4px;font-weight:900">ROOM 23 — Authentic & Accepting</div>
+    <div class="room-title">Neurodivergent Space</div>
+    <div class="room-area">Wellbeing</div>
+    <p class="room-desc">For ADHD, autism, dyslexia, dyspraxia. No masking. Sensory tools, focus aids.</p>
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-lbl">Capacity</div><div class="stat-val">15 people</div></div>
+      <div class="stat"><div class="stat-lbl">Access</div><div class="stat-val">Members</div></div>
+      <div class="stat"><div class="stat-lbl">Booking</div><div class="stat-val">Walk in</div></div>
+      <div class="stat"><div class="stat-lbl">Hours</div><div class="stat-val">10am–8pm</div></div>
+    </div>
+    <div class="note-box"><strong>How to get in:</strong> Walk in on your member card. Quiet hours enforced.</div>
+    <div class="actions">
+      <a class="btn-p" href="index.html#membership">Join K-NEXUS Free →</a>
+      <a class="btn-s" href="spaces.html">← All 27 Spaces</a>
+      <a class="btn-s" href="index.html#contact">📧 Contact</a>
+    </div>
+    <div class="room-nav">
+      <a class="rnav" href="room-22.html"><small>← Previous</small>Room 22: Veterans Support Suite</a>
+      <a class="rnav" href="room-24.html" style="text-align:right"><small>Next →</small>Room 24: Brain Injury Rehabilitation</a>
+    </div>
+  </div>
+</div>
+<script>
+var _aud=null,_audNodes=[],_audOn=false,_animOn=true;
+function _initAud(){if(_aud)return;try{_aud=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+function _stopAud(){_audNodes.forEach(function(n){try{n.stop();}catch(e){}});_audNodes=[];_audOn=false;}
+function _tone(freq,vol,type,dur){_initAud();if(!_aud)return;var o=_aud.createOscillator(),g=_aud.createGain();o.type=type||'sine';o.frequency.value=freq;g.gain.value=vol||.05;o.connect(g);g.connect(_aud.destination);o.start();if(dur)o.stop(_aud.currentTime+dur);else _audNodes.push(o);return o;}
+function playMeadow(){_stopAud();_audOn=true;_initAud();
+  var notes=[196,220,261,294,330];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sine';o.frequency.value=notes[i%notes.length];g.gain.setValueAtTime(0,_aud.currentTime);
+  g.gain.linearRampToValueAtTime(.04,_aud.currentTime+.2);g.gain.linearRampToValueAtTime(0,_aud.currentTime+1.8);
+  o.connect(g);g.connect(_aud.destination);o.start();o.stop(_aud.currentTime+2);_audNodes.push(o);i++;setTimeout(next,1800+(Math.random()*800));}
+  next();}
+function playArcade(){_stopAud();_audOn=true;_initAud();
+  var seq=[523,659,784,1047,784,659,523,392];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='square';o.frequency.value=seq[i%seq.length];g.gain.value=.04;
+  o.connect(g);g.connect(_aud.destination);o.start();o.stop(_aud.currentTime+.12);_audNodes.push(o);i++;setTimeout(next,130);}
+  next();}
+function playVr(){_stopAud();_audOn=true;_initAud();
+  var pads=[164,196,220,246,261];
+  pads.forEach(function(f,idx){var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sine';o.frequency.value=f;g.gain.value=.02;o.connect(g);g.connect(_aud.destination);o.start();_audNodes.push(o);});}
+function playCreation(){_stopAud();_audOn=true;_initAud();
+  var notes=[261,311,349,392,440];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='triangle';o.frequency.value=notes[i%notes.length];g.gain.setValueAtTime(0,_aud.currentTime);
+  g.gain.linearRampToValueAtTime(.035,_aud.currentTime+.1);g.gain.linearRampToValueAtTime(0,_aud.currentTime+.9);
+  o.connect(g);g.connect(_aud.destination);o.start();o.stop(_aud.currentTime+1);_audNodes.push(o);i++;setTimeout(next,900+(Math.random()*400));}
+  next();}
+function playMusic(){_stopAud();_audOn=true;_initAud();
+  var bass=[65,65,82,73];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sawtooth';o.frequency.value=bass[i%bass.length];g.gain.value=.06;
+  o.connect(g);g.connect(_aud.destination);o.start();o.stop(_aud.currentTime+.4);_audNodes.push(o);i++;setTimeout(next,420);}
+  next();}
+function playCounselling(){_stopAud();_audOn=true;_initAud();
+  var notes=[261,294,330,349];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sine';o.frequency.value=notes[i%notes.length];g.gain.setValueAtTime(0,_aud.currentTime);
+  g.gain.linearRampToValueAtTime(.03,_aud.currentTime+.5);g.gain.linearRampToValueAtTime(0,_aud.currentTime+2.5);
+  o.connect(g);g.connect(_aud.destination);o.start();o.stop(_aud.currentTime+3);_audNodes.push(o);i++;setTimeout(next,2800+(Math.random()*500));}
+  next();}
+function playHydro(){_stopAud();_audOn=true;_initAud();
+  var harp=[523,659,784,988,1047];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sine';o.frequency.value=harp[Math.floor(Math.random()*harp.length)];
+  g.gain.setValueAtTime(0,_aud.currentTime);g.gain.linearRampToValueAtTime(.04,_aud.currentTime+.05);
+  g.gain.linearRampToValueAtTime(0,_aud.currentTime+1.5);o.connect(g);g.connect(_aud.destination);
+  o.start();o.stop(_aud.currentTime+1.5);_audNodes.push(o);setTimeout(next,400+(Math.random()*1200));}
+  next();}
+function playSensory(){_stopAud();_audOn=true;_initAud();
+  var chimes=[1047,1175,1319,1397,1568];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sine';o.frequency.value=chimes[Math.floor(Math.random()*chimes.length)];
+  g.gain.setValueAtTime(0,_aud.currentTime);g.gain.linearRampToValueAtTime(.03,_aud.currentTime+.05);
+  g.gain.linearRampToValueAtTime(0,_aud.currentTime+2);o.connect(g);g.connect(_aud.destination);
+  o.start();o.stop(_aud.currentTime+2);_audNodes.push(o);setTimeout(next,1200+(Math.random()*2000));}
+  next();}
+function playVeterans(){_stopAud();_audOn=true;_initAud();
+  var guitar=[196,220,261,196,165,196];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sawtooth';o.frequency.value=guitar[i%guitar.length];
+  g.gain.setValueAtTime(0,_aud.currentTime);g.gain.linearRampToValueAtTime(.04,_aud.currentTime+.02);
+  g.gain.linearRampToValueAtTime(0,_aud.currentTime+.6);o.connect(g);g.connect(_aud.destination);
+  o.start();o.stop(_aud.currentTime+.7);_audNodes.push(o);i++;setTimeout(next,650+(Math.random()*200));}
+  next();}
+function playNhs(){_stopAud();_audOn=true;_initAud();
+  var steel=[392,440,494,523,587];var i=0;
+  function next(){if(!_audOn)return;var o=_aud.createOscillator(),g=_aud.createGain();
+  o.type='sine';o.frequency.value=steel[i%steel.length];
+  g.gain.setValueAtTime(0,_aud.currentTime);g.gain.linearRampToValueAtTime(.04,_aud.currentTime+.05);
+  g.gain.linearRampToValueAtTime(0,_aud.currentTime+.8);o.connect(g);g.connect(_aud.destination);
+  o.start();o.stop(_aud.currentTime+.9);_audNodes.push(o);i++;setTimeout(next,350+(Math.random()*300));}
+  next();}
+var PLAY_FN={meadow:playMeadow,arcade:playArcade,vr:playVr,creation:playCreation,music:playMusic,counselling:playCounselling,hydro:playHydro,sensory:playSensory,veterans:playVeterans,nhs:playNhs};
+function toggleMusic(theme){var b=document.getElementById('music-btn');if(_audOn){_stopAud();if(b)b.textContent='🎵 Music OFF';}else{var fn=PLAY_FN[theme];if(fn)fn();if(b)b.textContent='🔇 Music ON';}}
+function toggleAnim(){_animOn=!_animOn;var b=document.getElementById('anim-btn');document.body.style.setProperty('--anim-play',_animOn?'running':'paused');if(b)b.textContent=_animOn?'✨ Anim ON':'🚫 Anim OFF';}
+function toggleColour(){document.body.classList.toggle('cb-mode');var b=document.getElementById('colour-btn');if(b)b.textContent=document.body.classList.contains('cb-mode')?'🎨 Std Colours':'👁 Colour Blind';}
+function doLogout(){localStorage.removeItem('knx_user');var overlay=document.createElement('div');overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;font-family:Nunito,sans-serif;text-align:center;flex-direction:column;gap:16px';overlay.innerHTML='<div style="font-size:3rem">💜</div><div style="font-size:1.4rem;font-weight:900;color:#c4b5fd">Thanks for being in K-NEXUS.</div><div style="color:#a78bfa">Come back soon!</div>';document.body.appendChild(overlay);_stopAud();setTimeout(function(){window.location.href='index.html';},2500);}
+</script>
+</body></html>
